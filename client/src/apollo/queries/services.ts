@@ -6,19 +6,34 @@ export const GET_ALL_SERVICES = gql`
       id
       name
       group
+      shortName
       layers
+      normal
     }
   }
 `;
 
-export const GET_SERVICE = gql`
-  query getService($serviceId: ID!) {
-    getService(serviceId: $serviceId) {
+export const GET_SERVICE_INSTANCES = gql`
+  query getServiceInstances($serviceId: ID!, $duration: Duration!) {
+    getServiceInstances(serviceId: $serviceId, duration: $duration) {
       id
       name
-      group
-      layers
-      normal
+      instanceUUID
+      language
+      attributes {
+        name
+        value
+      }
+    }
+  }
+`;
+
+export const GET_ALL_DATABASES = gql`
+  query getAllDatabases($duration: Duration!) {
+    getAllDatabases(duration: $duration) {
+      id
+      name
+      type
     }
   }
 `;

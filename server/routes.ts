@@ -34,15 +34,14 @@ export async function registerRoutes(
   // This allows the frontend to talk to SkyWalking without CORS issues
   // and allows us to configure the endpoint server-side.
   app.post(api.graphql.proxy.path, async (req, res) => {
-    const SKYWALKING_ENDPOINT =
-      process.env.SKYWALKING_ENDPOINT || "http://localhost:12800/graphql";
+    // Localhost:12800 as specified by the user
+    const SKYWALKING_ENDPOINT = "http://127.0.0.1:12800/graphql";
 
     try {
       const response = await fetch(SKYWALKING_ENDPOINT, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          // Forward auth headers if needed in the future
           ...(req.headers.authorization
             ? { Authorization: req.headers.authorization }
             : {}),
@@ -51,10 +50,6 @@ export async function registerRoutes(
       });
 
       if (!response.ok) {
-        console.error(
-          `SkyWalking Proxy Error: ${response.status} ${response.statusText}`
-        );
-        // Try to read error body
         const text = await response.text();
         return res.status(response.status).send(text);
       }
@@ -62,9 +57,8 @@ export async function registerRoutes(
       const data = await response.json();
       res.json(data);
     } catch (error) {
-      console.error("SkyWalking Proxy Connection Failed:", error);
       res.status(502).json({
-        message: "Failed to connect to SkyWalking OAP server",
+        message: "Failed to connect to SkyWalking OAP server at 127.0.0.1:12800",
         details: error instanceof Error ? error.message : String(error),
       });
     }

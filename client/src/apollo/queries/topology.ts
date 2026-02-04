@@ -8,6 +8,26 @@ export const GET_GLOBAL_TOPOLOGY = gql`
         name
         type
         isReal
+        layers
+      }
+      calls {
+        id
+        source
+        target
+        detectPoints
+      }
+    }
+  }
+`;
+
+export const GET_SERVICE_TOPOLOGY = gql`
+  query getServiceTopology($serviceId: ID!, $duration: Duration!) {
+    getServiceTopology(serviceId: $serviceId, duration: $duration) {
+      nodes {
+        id
+        name
+        type
+        isReal
       }
       calls {
         id
