@@ -1,17 +1,15 @@
 import { gql } from '@apollo/client';
-
 export const GET_TRACES = gql`
   query queryBasicTraces($condition: TraceQueryCondition!) {
     queryBasicTraces(condition: $condition) {
       traces {
-        key
+        segmentId
         endpointNames
         duration
         start
         isError
         traceIds
       }
-      total
     }
   }
 `;

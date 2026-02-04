@@ -65,7 +65,7 @@ export default function TopologyPage() {
               graphData={graphData}
               nodeLabel="name"
               nodeColor={node => (node as any).isReal ? 'hsl(var(--primary))' : '#94a3b8'}
-              linkColor={() => 'rgba(255, 255, 255, 0.1)'}
+              linkColor={() => 'rgba(0, 129, 40, 0.8)'}
               linkDirectionalParticles={2}
               linkDirectionalParticleSpeed={0.005}
               backgroundColor="transparent"
@@ -78,7 +78,7 @@ export default function TopologyPage() {
                 const textWidth = ctx.measureText(label).width;
                 const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.2);
 
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+                ctx.fillStyle = 'rgba(129,40, 0, 0.8)';
                 ctx.fillRect((node.x as number) - (bckgDimensions[0] as number) / 2, (node.y as number) - (bckgDimensions[1] as number) / 2, bckgDimensions[0] as number, bckgDimensions[1] as number);
 
                 ctx.textAlign = 'center';

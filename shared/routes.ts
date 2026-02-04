@@ -7,7 +7,7 @@ export const api = {
   graphql: {
     proxy: {
       method: 'POST' as const,
-      path: '/api/graphql',
+      path: '/graphql',
       input: z.object({
         query: z.string(),
         variables: z.record(z.any()).optional(),
@@ -22,7 +22,7 @@ export const api = {
   preferences: {
     get: {
       method: 'GET' as const,
-      path: '/api/preferences/:key',
+      path: '/preferences/:key',
       responses: {
         200: z.custom<typeof userPreferences.$inferSelect>(),
         404: z.object({ message: z.string() }),
@@ -30,7 +30,7 @@ export const api = {
     },
     save: {
       method: 'POST' as const,
-      path: '/api/preferences',
+      path: '/preferences',
       input: insertUserPreferenceSchema,
       responses: {
         200: z.custom<typeof userPreferences.$inferSelect>(),

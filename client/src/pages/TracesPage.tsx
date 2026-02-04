@@ -6,31 +6,48 @@ import { GET_TRACES } from '@/apollo/queries/traces';
 import { GET_ALL_SERVICES } from '@/apollo/queries/services';
 import { useDurationStore } from '@/store/useDurationStore';
 import { Card } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Search, Filter, AlertCircle, Server } from 'lucide-react';
+import { Search, AlertCircle, Server } from 'lucide-react';
 import { useLocation } from 'wouter';
 
 export default function TracesPage() {
-  const [location, setLocation] = useLocation();
+  const [, setLocation] = useLocation();
   const { durationObj } = useDurationStore();
-  const [status, setStatus] = useState<string>('ALL');
-  const [minDuration, setMinDuration] = useState<string>('');
-  const [serviceId, setServiceId] = useState<string>('ALL');
 
+  const [status, setStatus] = useState<'ALL' | 'SUCCESS' | 'ERROR'>('ALL');
+  const [minDuration, setMinDuration] = useState('');
+  const [serviceId, setServiceId] = useState('ALL');
+
+  // -------------------------
+  // Fetch services
+  // -------------------------
   const { data: servicesData } = useQuery(GET_ALL_SERVICES, {
     variables: { duration: durationObj },
   });
 
+  // -------------------------
+  // Fetch traces (SCHEMA SAFE)
+  // -------------------------
   const { data, loading, error } = useQuery(GET_TRACES, {
     variables: {
       condition: {
         serviceId: serviceId !== 'ALL' ? serviceId : undefined,
         queryDuration: durationObj,
-        traceState: status,
-        minTraceDuration: minDuration ? parseInt(minDuration) : undefined,
-        paging: { pageNum: 1, pageSize: 20, needTotal: true }
-      }
+        traceState: status,                 // REQUIRED (NON-NULL)
+        queryOrder: 'BY_START_TIME',        // REQUIRED (NON-NULL)
+        minTraceDuration: minDuration ? Number(minDuration) : undefined,
+        paging: {
+          pageNum: 1,
+          pageSize: 20,
+        },
+      },
     },
     fetchPolicy: 'network-only',
   });
@@ -39,8 +56,8 @@ export default function TracesPage() {
     setLocation(`/traces/${traceId}`);
   };
 
-  const traces = data?.queryBasicTraces?.traces || [];
-  const services = servicesData?.getAllServices || [];
+  const traces = data?.queryBasicTraces?.traces ?? [];
+  const services = servicesData?.getAllServices ?? [];
 
   return (
     <AppLayout>
@@ -49,6 +66,8 @@ export default function TracesPage() {
         {/* Filters */}
         <Card className="p-4 mb-6 border-white/5 bg-card/50 shadow-sm sticky top-0 z-10 backdrop-blur-md">
           <div className="flex flex-wrap items-center gap-4">
+            
+            {/* Service filter */}
             <div className="flex items-center gap-2">
               <Server className="w-4 h-4 text-primary" />
               <Select value={serviceId} onValueChange={setServiceId}>
@@ -58,7 +77,9 @@ export default function TracesPage() {
                 <SelectContent>
                   <SelectItem value="ALL">All Services</SelectItem>
                   {services.map((s: any) => (
-                    <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -66,19 +87,23 @@ export default function TracesPage() {
 
             <div className="h-6 w-px bg-white/10" />
 
+            {/* Search box (UI only for now) */}
             <div className="flex items-center gap-2 flex-1 min-w-[200px]">
               <Search className="w-4 h-4 text-muted-foreground" />
-              <Input 
-                placeholder="Search trace ID..." 
-                className="bg-transparent border-none focus-visible:ring-0 px-0 h-9" 
+              <Input
+                placeholder="Search trace ID..."
+                className="bg-transparent border-none focus-visible:ring-0 px-0 h-9"
               />
             </div>
-            
+
             <div className="h-6 w-px bg-white/10" />
 
+            {/* Status + Min Duration */}
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-medium text-muted-foreground">Status</span>
+                <span className="text-xs font-medium text-muted-foreground">
+                  Status
+                </span>
                 <Select value={status} onValueChange={setStatus}>
                   <SelectTrigger className="w-[120px] h-9 bg-background/50 border-white/10">
                     <SelectValue />
@@ -92,10 +117,12 @@ export default function TracesPage() {
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="text-xs font-medium text-muted-foreground">Min Duration (ms)</span>
-                <Input 
-                  type="number" 
-                  value={minDuration} 
+                <span className="text-xs font-medium text-muted-foreground">
+                  Min Duration (ms)
+                </span>
+                <Input
+                  type="number"
+                  value={minDuration}
                   onChange={(e) => setMinDuration(e.target.value)}
                   className="w-[100px] h-9 bg-background/50 border-white/10"
                   placeholder="0"
@@ -113,11 +140,11 @@ export default function TracesPage() {
           </div>
         ) : (
           <div className="flex-1 min-h-0">
-             <TraceList 
-               traces={traces} 
-               loading={loading}
-               onSelectTrace={handleTraceSelect}
-             />
+            <TraceList
+              traces={traces}
+              loading={loading}
+              onSelectTrace={handleTraceSelect}
+            />
           </div>
         )}
       </div>
