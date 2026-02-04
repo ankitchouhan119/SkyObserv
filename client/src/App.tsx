@@ -8,16 +8,8 @@ import ServicesPage from "@/pages/ServicesPage";
 import ServiceDetailPage from "@/pages/ServiceDetailPage";
 import TracesPage from "@/pages/TracesPage";
 import TraceDetailPage from "@/pages/TraceDetailPage";
+import TopologyPage from "@/pages/TopologyPage";
 import NotFound from "@/pages/not-found";
-
-// Placeholder for unimplemented pages
-function TopologyPage() {
-  return (
-    <div className="h-screen w-full flex items-center justify-center bg-background text-muted-foreground">
-      Topology visualization coming soon.
-    </div>
-  );
-}
 
 function Router() {
   return (

@@ -3,11 +3,12 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { TraceList } from '@/components/traces/TraceList';
 import { useQuery } from '@apollo/client';
 import { GET_TRACES } from '@/apollo/queries/traces';
+import { GET_ALL_SERVICES } from '@/apollo/queries/services';
 import { useDurationStore } from '@/store/useDurationStore';
 import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Search, Filter, AlertCircle } from 'lucide-react';
+import { Search, Filter, AlertCircle, Server } from 'lucide-react';
 import { useLocation } from 'wouter';
 
 export default function TracesPage() {
@@ -15,17 +16,23 @@ export default function TracesPage() {
   const { durationObj } = useDurationStore();
   const [status, setStatus] = useState<string>('ALL');
   const [minDuration, setMinDuration] = useState<string>('');
+  const [serviceId, setServiceId] = useState<string>('ALL');
+
+  const { data: servicesData } = useQuery(GET_ALL_SERVICES, {
+    variables: { duration: durationObj },
+  });
 
   const { data, loading, error } = useQuery(GET_TRACES, {
     variables: {
       condition: {
+        serviceId: serviceId !== 'ALL' ? serviceId : undefined,
         queryDuration: durationObj,
         traceState: status,
         minTraceDuration: minDuration ? parseInt(minDuration) : undefined,
         paging: { pageNum: 1, pageSize: 20, needTotal: true }
       }
     },
-    fetchPolicy: 'network-only', // Ensure we get fresh traces
+    fetchPolicy: 'network-only',
   });
 
   const handleTraceSelect = (traceId: string) => {
@@ -33,6 +40,7 @@ export default function TracesPage() {
   };
 
   const traces = data?.queryBasicTraces?.traces || [];
+  const services = servicesData?.getAllServices || [];
 
   return (
     <AppLayout>
@@ -41,6 +49,23 @@ export default function TracesPage() {
         {/* Filters */}
         <Card className="p-4 mb-6 border-white/5 bg-card/50 shadow-sm sticky top-0 z-10 backdrop-blur-md">
           <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Server className="w-4 h-4 text-primary" />
+              <Select value={serviceId} onValueChange={setServiceId}>
+                <SelectTrigger className="w-[200px] h-9 bg-background/50 border-white/10">
+                  <SelectValue placeholder="Select Service" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">All Services</SelectItem>
+                  {services.map((s: any) => (
+                    <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="h-6 w-px bg-white/10" />
+
             <div className="flex items-center gap-2 flex-1 min-w-[200px]">
               <Search className="w-4 h-4 text-muted-foreground" />
               <Input 
