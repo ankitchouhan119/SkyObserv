@@ -1,0 +1,307 @@
+You are a senior frontend + observability engineer with deep knowledge of:
+
+Apache SkyWalking internals
+
+GraphQL-based observability APIs
+
+Distributed tracing concepts
+
+Metrics, logs, and trace visualization
+
+React + TypeScript + modern frontend architecture
+
+You must generate production-quality code, not demos.
+
+APPLICATION CONTEXT (VERY IMPORTANT)
+
+We are building a custom observability platform, NOT using Grafana UI.
+
+Backend Observability Stack
+
+Apache SkyWalking
+
+SkyWalking OAP Server
+
+GraphQL API exposed at:
+http://localhost:12800/graphql
+
+Storage: Elasticsearch
+
+Agents: SkyWalking native agents (Java services)
+
+Data types available:
+
+Services
+
+Service Instances
+
+Metrics (latency, throughput, error rate)
+
+Traces (segments + spans)
+
+Topology data
+
+Critical Rule
+
+❗ NO data should be hardcoded
+❗ ALL data must be fetched dynamically via SkyWalking GraphQL APIs
+❗ Elasticsearch must NOT be queried directly
+
+APPLICATION GOAL
+
+Generate a React-based observability dashboard that:
+
+Fetches real-time observability data from SkyWalking
+
+Visualizes:
+
+Services
+
+Metrics
+
+Traces
+
+Span timelines
+
+Is extensible for AI / natural language querying later
+
+Is suitable for hackathon submission and real-world usage
+
+REQUIRED TECH STACK
+
+Use the following stack exactly:
+
+Frontend
+
+React 18
+
+TypeScript
+
+Vite
+
+Apollo Client (GraphQL)
+
+React Router
+
+Zustand or Redux Toolkit (state management)
+
+Tailwind CSS (or equivalent modern styling)
+
+Recharts or ECharts (metrics visualization)
+
+Data Layer
+
+GraphQL queries ONLY
+
+Apollo Client with:
+
+query caching
+
+loading states
+
+error handling
+
+REQUIRED APP STRUCTURE
+
+Generate the following folder structure:
+
+src/
+ ├─ apollo/
+ │   ├─ client.ts
+ │   └─ queries/
+ │       ├─ services.ts
+ │       ├─ metrics.ts
+ │       ├─ traces.ts
+ │       └─ topology.ts
+ │
+ ├─ components/
+ │   ├─ layout/
+ │   ├─ charts/
+ │   ├─ traces/
+ │   └─ common/
+ │
+ ├─ pages/
+ │   ├─ ServicesPage.tsx
+ │   ├─ ServiceDetailPage.tsx
+ │   ├─ TracesPage.tsx
+ │   └─ TraceDetailPage.tsx
+ │
+ ├─ store/
+ ├─ types/
+ ├─ utils/
+ └─ App.tsx
+
+REQUIRED FUNCTIONAL FEATURES
+1️⃣ Services Overview Page
+
+Fetch services using SkyWalking GraphQL:
+
+getAllServices(duration)
+
+Display:
+
+Service name
+
+Service ID
+
+Duration selector (last 15m, 1h, 6h, 24h)
+
+2️⃣ Service Metrics Dashboard
+
+For a selected service:
+
+Fetch metrics via GraphQL:
+
+latency
+
+throughput (CPM)
+
+error rate
+
+Render:
+
+Line charts
+
+Auto-refresh every 30s
+
+Metrics must change with time window
+
+3️⃣ Trace Explorer
+
+Fetch traces using:
+
+queryBasicTraces
+
+Filters:
+
+duration
+
+error only
+
+latency range
+
+Show:
+
+traceId
+
+startTime
+
+duration
+
+error flag
+
+4️⃣ Trace Detail View
+
+When a trace is selected:
+
+Fetch full trace via:
+
+queryTrace(traceId)
+
+Render:
+
+Span tree (parent/child)
+
+Timeline / waterfall view
+
+Span metadata:
+
+operation name
+
+component
+
+peer
+
+start/end time
+
+error state
+
+GRAPHQL REQUIREMENTS (CRITICAL)
+
+All queries must:
+
+Accept Duration
+
+Use epoch timestamps where required
+
+Handle empty responses gracefully
+
+Queries must match SkyWalking schema, NOT generic GraphQL assumptions
+
+Example patterns:
+
+getAllServices(duration)
+
+queryBasicTraces(condition)
+
+queryTrace(traceId)
+
+UI / UX REQUIREMENTS
+
+Clean, professional observability UI
+
+No Grafana look-alike
+
+Clear hierarchy:
+
+Service → Metrics → Traces → Spans
+
+Loading skeletons
+
+Error boundaries
+
+NON-GOALS (DO NOT DO THESE)
+
+❌ No mock data
+❌ No hardcoded service IDs
+❌ No direct Elasticsearch access
+❌ No Grafana embedding
+❌ No fake trace IDs
+
+EXTENSIBILITY REQUIREMENT (IMPORTANT)
+
+The architecture must allow future AI integration, where:
+
+A natural language query can:
+
+Fetch metrics
+
+Fetch traces
+
+Correlate services
+
+Components should be data-driven, not tightly coupled
+
+DELIVERABLES
+
+Generate:
+
+Complete React app code
+
+Apollo GraphQL setup
+
+Reusable GraphQL query modules
+
+Clear comments explaining observability logic
+
+Instructions to run the app locally
+
+QUALITY BAR
+
+Assume:
+
+This will be reviewed by senior engineers
+
+This will be demoed in a hackathon
+
+This could become a real product
+
+Code must be:
+
+Clean
+
+Modular
+
+Correct
+
+Idiomatic
