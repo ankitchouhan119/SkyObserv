@@ -37,3 +37,15 @@ export const GET_ALL_DATABASES = gql`
     }
   }
 `;
+
+
+
+export const GET_SERVICE_ENDPOINTS = gql`
+  query GetServiceEndpoints($serviceId: ID!, $keyword: String!) {
+    endpoints: findEndpoint(serviceId: $serviceId, keyword: $keyword, limit: 100) {
+      id
+      name
+    }
+  }
+`;
+

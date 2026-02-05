@@ -10,6 +10,7 @@ import TracesPage from "@/pages/TracesPage";
 import TraceDetailPage from "@/pages/TraceDetailPage";
 import TopologyPage from "@/pages/TopologyPage";
 import NotFound from "@/pages/not-found";
+import EndpointDetailPage from "./pages/EndpointDetailPage";
 
 function Router() {
   return (
@@ -19,6 +20,7 @@ function Router() {
       <Route path="/traces" component={TracesPage} />
       <Route path="/traces/:id" component={TraceDetailPage} />
       <Route path="/topology" component={TopologyPage} />
+      <Route path="/services/:serviceId/endpoints/:endpointId" component={EndpointDetailPage} />
       <Route component={NotFound} />
     </Switch>
   );

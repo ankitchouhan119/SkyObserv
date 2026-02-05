@@ -2,6 +2,8 @@ import React from 'react';
 import { Link, useLocation } from 'wouter';
 import { Activity, Layers, GitBranch, Settings, Database } from 'lucide-react';
 import { DurationSelector } from '@/components/common/DurationSelector';
+import { TamboProvider } from "@tambo-ai/react";
+import { CustomRangePicker } from '../common/CustomRangePicker';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -18,6 +20,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   ];
 
   return (
+    <TamboProvider apiKey="tambo_rADabnhc9UVtaxUZZrD0xmpPHnmvNjS9KYSRCmS1kIVPyGL1+TXAaoiOpspqMshPbTYyZD5O+O6FUmZDbjc4LL5RLlTPn25TWir2PA6Daz0=">
     <div className="min-h-screen bg-background text-foreground flex flex-col md:flex-row font-sans">
       {/* Sidebar */}
       <aside className="w-full md:w-64 border-r border-white/5 bg-card/50 flex-shrink-0 flex flex-col h-screen sticky top-0">
@@ -49,7 +52,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         <div className="p-4 border-t border-white/5">
           <div className="flex items-center gap-3 px-3 py-2 text-xs text-muted-foreground">
             <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)] animate-pulse" />
-            Connected to SkyWalking
+            Connected to SkyObserv
           </div>
         </div>
       </aside>
@@ -62,6 +65,7 @@ export function AppLayout({ children }: AppLayoutProps) {
             Dashboard
           </h1>
           <div className="flex items-center gap-4">
+            <CustomRangePicker />
             <DurationSelector />
             <div className="w-8 h-8 rounded-full bg-secondary border border-white/10 flex items-center justify-center text-xs font-bold text-muted-foreground">
               AD
@@ -75,5 +79,6 @@ export function AppLayout({ children }: AppLayoutProps) {
         </div>
       </main>
     </div>
+  </TamboProvider>
   );
 }

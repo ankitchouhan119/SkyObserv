@@ -11,7 +11,7 @@ export const client = new ApolloClient({
       Query: {
         fields: {
           getAllServices: {
-            merge: false, // Always replace list
+            merge: false,
           },
         },
       },

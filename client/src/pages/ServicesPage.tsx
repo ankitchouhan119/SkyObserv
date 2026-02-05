@@ -8,6 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Link } from 'wouter';
 import { Search, Server, ArrowRight, Activity, Zap, AlertTriangle, Database } from 'lucide-react';
+import { MessageThreadCollapsible } from '@/components/tambo/message-thread-collapsible';
+import { MessageThreadFull } from '@/components/tambo/message-thread-full';
 
 export default function ServicesPage() {
   const { durationObj } = useDurationStore();
@@ -33,6 +35,8 @@ export default function ServicesPage() {
   return (
     <AppLayout>
       <div className="space-y-8 max-w-7xl mx-auto">
+        <MessageThreadCollapsible />
+        {/* <MessageThreadFull/> */}
         
         {/* Hero / Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

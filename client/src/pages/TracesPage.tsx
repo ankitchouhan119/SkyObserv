@@ -16,6 +16,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Search, AlertCircle, Server } from 'lucide-react';
 import { useLocation } from 'wouter';
+import { MessageThreadCollapsible } from '@/components/tambo/message-thread-collapsible';
 
 export default function TracesPage() {
   const [, setLocation] = useLocation();
@@ -45,7 +46,7 @@ export default function TracesPage() {
         minTraceDuration: minDuration ? Number(minDuration) : undefined,
         paging: {
           pageNum: 1,
-          pageSize: 20,
+          pageSize: 100,
         },
       },
     },
@@ -62,6 +63,7 @@ export default function TracesPage() {
   return (
     <AppLayout>
       <div className="h-[calc(100vh-140px)] flex flex-col max-w-7xl mx-auto">
+        <MessageThreadCollapsible />
         
         {/* Filters */}
         <Card className="p-4 mb-6 border-white/5 bg-card/50 shadow-sm sticky top-0 z-10 backdrop-blur-md">

@@ -10,7 +10,6 @@ import {
 } from 'recharts';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { format, parse } from 'date-fns';
 
 interface MetricChartProps {
   title: string;
@@ -21,37 +20,56 @@ interface MetricChartProps {
 }
 
 export function MetricChart({ title, data, unit = '', color = '#3b82f6', loading }: MetricChartProps) {
-  if (loading) {
-    return (
-      <Card className="p-6 h-[300px] border-white/5 bg-card/50">
-        <h3 className="text-sm font-medium text-muted-foreground mb-4">{title}</h3>
-        <Skeleton className="w-full h-[200px]" />
-      </Card>
-    );
+
+  const formattedData = data.map((item) => {
+  const rawId = String(item.id || "");
+  let timeLabel = "N/A";
+  let fullLabel = "N/A";
+
+  // 10 digits (Hour) ya 12 digits (Minute) dono ko match karein
+  const timestampMatch = rawId.match(/\d{10,12}/);
+  
+  if (timestampMatch) {
+    const ts = timestampMatch[0];
+    try {
+      const yyyy = Number(ts.substring(0, 4));
+      const month = Number(ts.substring(4, 6)) - 1;
+      const dd = Number(ts.substring(6, 8));
+      const hh = Number(ts.substring(8, 10));
+      // Minute sirf tabhi jab length 12 ho
+      const mm = ts.length >= 12 ? Number(ts.substring(10, 12)) : 0;
+
+      const utcDate = new Date(Date.UTC(yyyy, month, dd, hh, mm));
+
+      if (!isNaN(utcDate.getTime())) {
+        // IST (Local) Time conversion
+        timeLabel = utcDate.toLocaleTimeString('en-IN', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false,
+        });
+
+        fullLabel = utcDate.toLocaleString('en-IN', {
+          day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false
+        });
+
+        // Agar Date range hai aur naya din shuru ho raha hai, toh date dikhao
+        if (ts.length === 10 && hh === 0) {
+          timeLabel = utcDate.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+        }
+      }
+    } catch (e) {
+      timeLabel = ts.slice(-4); 
+    }
   }
 
-  // Format data for Recharts
-  // SkyWalking returns 'id' as 'yyyyMMddHHmm' usually
-  const formattedData = data.map(item => {
-    // Basic parsing assuming MINUTE step for now
-    // In production, would use proper parsing based on step
-    const dateStr = item.id; 
-    // Handle different formats if needed, e.g. 202310251200
-    // Simplified parsing:
-    const shortTime = dateStr.slice(-4);
-    const timeLabel = `${shortTime.slice(0, 2)}:${shortTime.slice(2)}`;
-    return {
-      time: timeLabel,
-      value: item.value,
-      fullDate: item.id
-    };
-  });
-
+  return { time: timeLabel, fullTime: fullLabel, value: item.value };
+});
   return (
-    <Card className="p-6 border-white/5 bg-card/50 shadow-sm hover:border-primary/20 transition-colors">
+    <Card className="p-6 border-white/5 bg-card/50 shadow-sm">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-sm font-medium text-muted-foreground tracking-wide uppercase">{title}</h3>
-        <span className="text-2xl font-bold font-mono">
+        <h3 className="text-sm font-medium text-muted-foreground uppercase font-bold">{title}</h3>
+        <span className="text-2xl font-bold font-mono text-white">
           {data.length > 0 ? data[data.length - 1].value.toLocaleString() : 0}
           <span className="text-sm font-normal text-muted-foreground ml-1">{unit}</span>
         </span>
@@ -61,45 +79,34 @@ export function MetricChart({ title, data, unit = '', color = '#3b82f6', loading
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={formattedData}>
             <defs>
-              <linearGradient id={`gradient-${title}`} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={color} stopOpacity={0.2}/>
+              <linearGradient id={`gradient-${title.replace(/\s+/g, '-')}`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor={color} stopOpacity={0.3}/>
                 <stop offset="95%" stopColor={color} stopOpacity={0}/>
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
             <XAxis 
               dataKey="time" 
-              stroke="rgba(255,255,255,0.3)" 
+              stroke="rgba(255,255,255,0.4)" 
               fontSize={10} 
               tickLine={false} 
               axisLine={false}
-              minTickGap={30}
+              minTickGap={40} // 👈 Space for Date labels
+              interval="preserveStartEnd"
             />
-            <YAxis 
-              stroke="rgba(255,255,255,0.3)" 
-              fontSize={10} 
-              tickLine={false} 
-              axisLine={false}
-              tickFormatter={(value) => value >= 1000 ? `${value/1000}k` : value}
-            />
+            <YAxis hide={false} stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} axisLine={false} />
             <Tooltip
-              contentStyle={{ 
-                backgroundColor: 'hsl(var(--card))', 
-                borderColor: 'rgba(255,255,255,0.1)',
-                borderRadius: '8px',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.5)' 
-              }}
-              itemStyle={{ color: 'hsl(var(--foreground))', fontFamily: 'var(--font-mono)' }}
-              labelStyle={{ color: 'hsl(var(--muted-foreground))', marginBottom: '0.25rem' }}
-              cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 2 }}
+              labelFormatter={(label, payload) => payload[0]?.payload?.fullTime || label}
+              contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '12px' }}
             />
             <Area 
               type="monotone" 
               dataKey="value" 
               stroke={color} 
-              strokeWidth={2}
+              strokeWidth={2.5}
               fillOpacity={1} 
-              fill={`url(#gradient-${title})`} 
+              fill={`url(#gradient-${title.replace(/\s+/g, '-')})`}
+              connectNulls={true} // 👈 Taaki blank gap na dikhe
             />
           </AreaChart>
         </ResponsiveContainer>
