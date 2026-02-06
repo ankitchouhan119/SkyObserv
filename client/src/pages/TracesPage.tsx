@@ -63,7 +63,7 @@ export default function TracesPage() {
   return (
     <AppLayout>
       <div className="h-[calc(100vh-140px)] flex flex-col max-w-7xl mx-auto">
-        <MessageThreadCollapsible />
+        {/* <MessageThreadCollapsible /> */}
         
         {/* Filters */}
         <Card className="p-4 mb-6 border-white/5 bg-card/50 shadow-sm sticky top-0 z-10 backdrop-blur-md">

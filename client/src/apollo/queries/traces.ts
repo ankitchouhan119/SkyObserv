@@ -53,3 +53,4 @@ export const GET_TRACE_DETAILS = gql`
     }
   }
 `;
+

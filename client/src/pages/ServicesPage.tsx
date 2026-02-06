@@ -35,7 +35,7 @@ export default function ServicesPage() {
   return (
     <AppLayout>
       <div className="space-y-8 max-w-7xl mx-auto">
-        <MessageThreadCollapsible />
+        {/* <MessageThreadCollapsible /> */}
         {/* <MessageThreadFull/> */}
         
         {/* Hero / Stats */}

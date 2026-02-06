@@ -1,9 +1,7 @@
-import React, { useState } from 'react';
-import { useLocation } from 'wouter';
-import { useRoute, Link } from 'wouter';
+import React from 'react';
+import { useLocation, useRoute, Link } from 'wouter';
 import { useQuery } from '@apollo/client';
-import { GET_SERVICE_INSTANCES } from '@/apollo/queries/services';
-import { GET_SERVICE_ENDPOINTS } from '@/apollo/queries/services';
+import { GET_SERVICE_INSTANCES, GET_SERVICE_ENDPOINTS } from '@/apollo/queries/services';
 import { useServiceMetrics } from '@/hooks/use-service-metrics';
 import { useDurationStore } from '@/store/useDurationStore';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -12,7 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MetricChart } from '@/components/charts/MetricChart';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Activity, Cpu, Database, Server, Clock, ArrowLeft, RefreshCw, Zap, AlertTriangle } from 'lucide-react';
+import { Cpu, Server, Clock, Database, ArrowLeft, RefreshCw } from 'lucide-react';
+import { useTamboContextHelpers } from "@tambo-ai/react";
 
 export default function ServiceDetailPage() {
   const [, setLocation] = useLocation();
@@ -20,82 +19,68 @@ export default function ServiceDetailPage() {
   const serviceId = params?.id || '';
   const { durationObj } = useDurationStore();
 
-  // 1. Endpoints fetch karne ke liye query add karein
-  const { data: endpointsData, loading: endpointsLoading } = useQuery(GET_SERVICE_ENDPOINTS, {
+  const { data: endpointsData } = useQuery(GET_SERVICE_ENDPOINTS, {
     variables: { serviceId, keyword: '' },
     skip: !serviceId,
   });
-
-  const endpoints = endpointsData?.endpoints || [];
-
 
   const { data: instancesData, loading: instancesLoading } = useQuery(GET_SERVICE_INSTANCES, {
     variables: { serviceId, duration: durationObj },
     skip: !serviceId,
   });
 
-  // const { latency, throughput, sla } = useServiceMetrics(serviceId);
   const { latency, throughput, sla } = useServiceMetrics(serviceId, 'Service', durationObj);
+  
+  const endpoints = endpointsData?.endpoints || [];
   const instances = instancesData?.getServiceInstances || [];
-  const serviceName = serviceId ? atob(serviceId.split('.')[0]) : 'Loading...';
+  const serviceName = serviceId ? atob(serviceId.split('.')[0]) : 'new4';
+
+  const { addContextHelper, removeContextHelper } = useTamboContextHelpers();
+
+  React.useEffect(() => {
+    // AI Context update logic
+    if (!latency.loading && serviceId) {
+      const curLat = Math.round(latency.data.at(-1)?.value || 0);
+      const curThr = Math.round(throughput.data.at(-1)?.value || 0);
+      const curSLA = Math.round(sla.data.at(-1)?.value || 0);
+
+      addContextHelper("current_service", () => ({
+        serviceName,
+        metrics: { latency: curLat, throughput: curThr, sla: curSLA },
+        status: curSLA < 95 ? "critical" : "healthy",
+        viewing: "Service Detail Page",
+        instruction: "Use ServiceMetricsCard to show these values in Hinglish."
+      }));
+    }
+    return () => removeContextHelper("current_service");
+  }, [latency.data, throughput.data, sla.data, serviceName, addContextHelper, removeContextHelper]);
 
   return (
     <AppLayout>
       <div className="space-y-6 max-w-7xl mx-auto pb-12">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Link href="/">
-                <span className="hover:text-primary cursor-pointer flex items-center gap-1 transition-colors">
-                  <ArrowLeft className="w-3 h-3" /> Back to Services
-                </span>
-              </Link>
-            </div>
+            <Link href="/"><span className="text-sm text-muted-foreground hover:text-primary cursor-pointer flex items-center gap-1"><ArrowLeft className="w-3 h-3" /> Back</span></Link>
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold tracking-tight">{serviceName}</h1>
-              <Badge variant="outline" className="border-primary/20 bg-primary/5 text-primary">
-                <Server className="w-3 h-3 mr-1" /> Service
-              </Badge>
+              <h1 className="text-2xl font-bold text-white">{serviceName}</h1>
+              <Badge variant="outline" className="text-primary border-primary/20 bg-primary/5"><Server className="w-3 h-3 mr-1" /> Service</Badge>
             </div>
           </div>
-
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="bg-card/50 border-white/10">
-              <RefreshCw className="w-3.5 h-3.5 mr-2" /> Refresh
-            </Button>
-          </div>
+          <Button variant="outline" size="sm" className="bg-card/50 border-white/10 text-white"><RefreshCw className="w-3.5 h-3.5 mr-2" /> Refresh</Button>
         </div>
 
         <Tabs defaultValue="overview" className="space-y-6">
           <TabsList className="bg-card/50 border border-white/10 p-1">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="instances">Instances ({instances.length})</TabsTrigger>
-            <TabsTrigger value="endpoints">Endpoints</TabsTrigger>
+            <TabsTrigger value="endpoints">Endpoints ({endpoints.length})</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <MetricChart
-                title="Latency (P99)"
-                data={latency.data}
-                loading={latency.loading}
-                unit="ms"
-                color="hsl(var(--chart-1))"
-              />
-              <MetricChart
-                title="Throughput"
-                data={throughput.data}
-                loading={throughput.loading}
-                unit="cpm"
-                color="hsl(var(--chart-2))"
-              />
-              <MetricChart
-                title="Success Rate (SLA)"
-                data={sla.data}
-                loading={sla.loading}
-                unit="%"
-                color="hsl(var(--chart-4))"
-              />
+              <MetricChart title="Latency (ms)" data={latency.data} loading={latency.loading} unit="ms" color="hsl(var(--chart-1))" />
+              <MetricChart title="Throughput" data={throughput.data} loading={throughput.loading} unit="cpm" color="hsl(var(--chart-2))" />
+              <MetricChart title="SLA (%)" data={sla.data} loading={sla.loading} unit="%" color="hsl(var(--chart-4))" />
             </div>
           </TabsContent>
 
@@ -141,42 +126,21 @@ export default function ServiceDetailPage() {
             </div>
           </TabsContent>
 
-
           <TabsContent value="endpoints">
             <div className="bg-card/40 border border-white/10 rounded-xl overflow-hidden">
               <table className="w-full text-left">
-                <thead className="bg-white/5 text-xs font-bold uppercase text-muted-foreground">
-                  <tr>
-                    <th className="p-4">Endpoint Name</th>
-                    <th className="p-4 text-right">Action</th>
-                  </tr>
-                </thead>
+                <thead className="bg-white/5 text-xs text-muted-foreground"><tr><th className="p-4">Endpoint</th><th className="p-4 text-right">Action</th></tr></thead>
                 <tbody className="divide-y divide-white/5">
                   {endpoints.map((ep: any) => (
-                    <tr key={ep.id} className="hover:bg-white/5 transition-colors">
-                      <td className="p-4 font-medium">{ep.name}</td>
-                      <td className="p-4 text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-primary hover:bg-primary/10"
-                          onClick={() => {
-                            // 🔥 Name ko URI encode karke bhej rahe hain
-                            const encodedName = encodeURIComponent(ep.name);
-                            setLocation(`/services/${serviceId}/endpoints/${ep.id}?name=${encodedName}`);
-                          }}
-                        >
-                          View Metrics
-                        </Button>
-                      </td>
+                    <tr key={ep.id} className="hover:bg-white/5">
+                      <td className="p-4 text-sm text-gray-300">{ep.name}</td>
+                      <td className="p-4 text-right"><Button variant="ghost" size="sm" className="text-primary" onClick={() => setLocation(`/services/${serviceId}/endpoints/${ep.id}?name=${encodeURIComponent(ep.name)}`)}>View</Button></td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           </TabsContent>
-
-
         </Tabs>
       </div>
     </AppLayout>
