@@ -77,11 +77,10 @@ export default function TraceDetailPage() {
               
               {sortedSpans.map((span, index) => {
                 const offset = span.startTime - startTime;
-                const duration = Math.max(1, span.endTime - span.startTime); // Ensure visible even if 0ms
+                const duration = Math.max(1, span.endTime - span.startTime); 
                 
-                // Calculate percentages for CSS positioning
                 const leftPct = (offset / totalDuration) * 100;
-                const widthPct = Math.max(0.5, (duration / totalDuration) * 100); // Min 0.5% width
+                const widthPct = Math.max(0.5, (duration / totalDuration) * 100); 
                 
                 const isDb = span.type === 'Exit' && (span.component === 'PostgreSQL' || span.component === 'MongoDB');
 

@@ -11,14 +11,13 @@ export default function EndpointDetailPage() {
   const serviceId = params?.serviceId || '';
   const endpointId = params?.endpointId || '';
 
-  // 🔥 URL Query se name nikalne ka logic (atob crash se bachne ke liye)
+  // Logic to extract name from URL Query 
   const displayName = useMemo(() => {
     const searchParams = new URLSearchParams(window.location.search);
     const nameParam = searchParams.get('name');
     
     if (nameParam) return decodeURIComponent(nameParam);
     
-    // Fallback: Agar name na mile tabhi decode try karein
     try {
       return endpointId.includes('.') ? atob(endpointId.split('.')[1]) : endpointId;
     } catch {

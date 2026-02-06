@@ -1,68 +1,24 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { useTamboThreadInput } from "@tambo-ai/react";
+import { useTamboThreadInput, useTambo } from "@tambo-ai/react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { ArrowUp } from "lucide-react";
+import { ArrowUp, Square } from "lucide-react";
 import * as React from "react";
-
-/* ---------------------------------- */
-/* Variants */
-/* ---------------------------------- */
+import { useLocation } from "wouter";
 
 const messageInputVariants = cva("w-full", {
   variants: {
     variant: {
       default: "",
-      solid:
-        "shadow shadow-zinc-900/10 dark:shadow-zinc-900/20 [&_textarea]:bg-muted",
+      solid: "shadow shadow-zinc-900/10 dark:shadow-zinc-900/20 [&_textarea]:bg-muted",
       bordered: "[&_textarea]:border-2 [&_textarea]:border-border",
     },
   },
-  defaultVariants: {
-    variant: "default",
-  },
+  defaultVariants: { variant: "default" },
 });
 
-/* ---------------------------------- */
-/* Context */
-/* ---------------------------------- */
-
-interface MessageInputContextValue {
-  value: string;
-  setValue: (value: string) => void;
-  submit: (options: {
-    contextKey?: string;
-    streamResponse?: boolean;
-  }) => Promise<void>;
-  handleSubmit: (e: React.FormEvent) => Promise<void>;
-  isPending: boolean;
-  error: Error | null;
-  contextKey?: string;
-  textareaRef: React.RefObject<HTMLTextAreaElement>;
-  submitError: string | null;
-  setSubmitError: React.Dispatch<React.SetStateAction<string | null>>;
-}
-
-const MessageInputContext =
-  React.createContext<MessageInputContextValue | null>(null);
-
-const useMessageInputContext = () => {
-  const context = React.useContext(MessageInputContext);
-  if (!context) {
-    throw new Error(
-      "MessageInput sub-components must be used within a MessageInput",
-    );
-  }
-  return context;
-};
-
-/* ---------------------------------- */
-/* Root Component */
-/* ---------------------------------- */
-
-export interface MessageInputProps
-  extends React.HTMLAttributes<HTMLFormElement> {
+export interface MessageInputProps extends React.HTMLAttributes<HTMLFormElement> {
   contextKey?: string;
   variant?: VariantProps<typeof messageInputVariants>["variant"];
   children?: React.ReactNode;
@@ -70,210 +26,87 @@ export interface MessageInputProps
 
 const MessageInput = React.forwardRef<HTMLFormElement, MessageInputProps>(
   ({ children, className, contextKey, variant, ...props }, ref) => {
-    const { value, setValue, submit, isPending, error } =
-      useTamboThreadInput(contextKey);
-
-    const [displayValue, setDisplayValue] = React.useState("");
-    const [submitError, setSubmitError] = React.useState<string | null>(null);
-    const textareaRef = React.useRef<HTMLTextAreaElement>(null);
-
-    React.useEffect(() => {
-      setDisplayValue(value);
-      if (value && textareaRef.current) {
-        textareaRef.current.focus();
-      }
-    }, [value]);
+    const { value, setValue, submit, isPending } = useTamboThreadInput(contextKey);
+    const [, setLocation] = useLocation();
 
     const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
-      if (!value.trim()) return;
-
-      setSubmitError(null);
-      setDisplayValue("");
+      const prompt = value.trim();
+      if (!prompt) return;
 
       try {
-        await submit({
-          contextKey,
-          streamResponse: true,
-        });
+        await submit({ contextKey, streamResponse: true });
+        
+        // Navigation Logic based on query
+        const lowPrompt = prompt.toLowerCase();
+        if (lowPrompt.includes("trace")) setLocation("/traces");
+        else if (lowPrompt.includes("service")) setLocation("/");
+        else if (lowPrompt.includes("topology")) setLocation("/topology");
+        else if (lowPrompt.includes("database")) setLocation("/databases");
+
+        // Sync Event for UI Update
+        window.dispatchEvent(new CustomEvent("skyobserv:query-update", { detail: { query: prompt } }));
+
         setValue("");
-        textareaRef.current?.focus();
       } catch (err) {
-        setDisplayValue(value);
-        setSubmitError(
-          err instanceof Error
-            ? err.message
-            : "Failed to send message. Please try again.",
-        );
+        console.error("Submit error:", err);
       }
     };
 
-    const contextValue: MessageInputContextValue = {
-      value: displayValue,
-      setValue: (val) => {
-        setValue(val);
-        setDisplayValue(val);
-      },
-      submit,
-      handleSubmit,
-      isPending,
-      error,
-      contextKey,
-      textareaRef,
-      submitError,
-      setSubmitError,
-    };
-
     return (
-      <MessageInputContext.Provider value={contextValue}>
-        <form
-          ref={ref}
-          onSubmit={handleSubmit}
-          className={cn(messageInputVariants({ variant }), className)}
-          {...props}
-        >
-          <div className="flex flex-col rounded-xl bg-gradient-to-br from-gray-900 to-blue-900 border border-gray-500 shadow-md p-2 px-3">
-            {children}
-          </div>
-        </form>
-      </MessageInputContext.Provider>
+      <form ref={ref} onSubmit={handleSubmit} className={cn(messageInputVariants({ variant }), className)} {...props}>
+        <div className="flex flex-col rounded-xl bg-gradient-to-br from-gray-900 to-blue-900 border border-gray-500 shadow-md p-2 px-3">
+          {children}
+        </div>
+      </form>
     );
   },
 );
 MessageInput.displayName = "MessageInput";
 
-/* ---------------------------------- */
-/* Textarea */
-/* ---------------------------------- */
-
-export interface MessageInputTextareaProps
-  extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
-  placeholder?: string;
-}
-
-const MessageInputTextarea = ({
-  className,
-  placeholder = "What do you want to do?",
-  ...props
-}: MessageInputTextareaProps) => {
-  const { value, setValue, isPending, textareaRef, handleSubmit } =
-    useMessageInputContext();
-
+export const MessageInputTextarea = ({ className, placeholder = "Ask SkyObserv anything...", ...props }: any) => {
+  const { value, setValue, isPending } = useTamboThreadInput();
   return (
     <textarea
-      ref={textareaRef}
       value={value}
       onChange={(e) => setValue(e.target.value)}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" && !e.shiftKey) {
-          e.preventDefault();
-          if (value.trim()) {
-            handleSubmit(e as unknown as React.FormEvent);
-          }
-        }
+      onKeyDown={(e) => { 
+        if (e.key === "Enter" && !e.shiftKey) { 
+          e.preventDefault(); 
+          (e.target as any).form.requestSubmit(); 
+        } 
       }}
       disabled={isPending}
       placeholder={placeholder}
-      className={cn(
-        "flex-1 resize-none rounded-t-lg bg-gradient-to-br from-gray-900 to-blue-900 border border-gray-500  p-3 text-sm text-foreground min-h-[20px] max-h-[40vh] focus:outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground/50",
-        className,
-      )}
-      aria-label="Chat Message Input"
+      className={cn("flex-1 resize-none rounded-t-lg bg-transparent p-3 text-sm text-white focus:outline-none min-h-[20px] max-h-[40vh] placeholder:text-muted-foreground/50", className)}
       {...props}
     />
   );
 };
-MessageInputTextarea.displayName = "MessageInput.Textarea";
 
-/* ---------------------------------- */
-/* Submit Button */
-/* ---------------------------------- */
+export const MessageInputSubmitButton = ({ className, ...props }: any) => {
+  const { isPending, value } = useTamboThreadInput();
+  const { thread, stopGeneration } = useTambo();
+  const isStreaming = thread?.generationStage === "STREAMING_RESPONSE";
 
-export interface MessageInputSubmitButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  children?: React.ReactNode;
-}
-
-const MessageInputSubmitButton = React.forwardRef<
-  HTMLButtonElement,
-  MessageInputSubmitButtonProps
->(({ className, children, ...props }, ref) => {
-  const { isPending } = useMessageInputContext();
-// bg-primary
-// text-primary-foreground
   return (
-    <button
-      ref={ref}
-      type="submit"
-      disabled={isPending}
-      className={cn(
-        "flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-gray-900 to-blue-900 border border-gray-500 text-primary-foreground hover:bg-primary/90 disabled:opacity-50",
-        className,
-      )}
-      aria-label="Send message"
+    <button 
+      type={isStreaming ? "button" : "submit"} 
+      onClick={isStreaming ? () => (thread as any)?.stopGeneration?.() || stopGeneration?.() : undefined}
+      disabled={!isStreaming && (isPending || !value.trim())} 
+      className={cn("flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-gray-900 to-blue-900 border border-gray-500 text-primary-foreground hover:bg-primary/90 transition-all cursor-pointer", isStreaming && "bg-red-500 animate-pulse", className)} 
       {...props}
     >
-      {children ??
-        (isPending ? (
-          <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
-        ) : (
-          <ArrowUp className="h-5 w-5" />
-        ))}
+      {isStreaming ? <Square className="h-4 w-4 fill-current text-white" /> : isPending ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" /> : <ArrowUp className="h-5 w-5 text-white" />}
     </button>
   );
-});
-MessageInputSubmitButton.displayName = "MessageInput.SubmitButton";
-
-/* ---------------------------------- */
-/* Toolbar */
-/* ---------------------------------- */
-
-const MessageInputToolbar = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, children, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn("mt-2 flex justify-end p-1", className)}
-    {...props}
-  >
-    {children}
-  </div>
-));
-MessageInputToolbar.displayName = "MessageInput.Toolbar";
-
-/* ---------------------------------- */
-/* Error */
-/* ---------------------------------- */
-
-const MessageInputError = React.forwardRef<
-  HTMLParagraphElement,
-  React.HTMLAttributes<HTMLParagraphElement>
->(({ className, ...props }, ref) => {
-  const { error, submitError } = useMessageInputContext();
-
-  if (!error && !submitError) return null;
-
-  return (
-    <p
-      ref={ref}
-      className={cn("mt-2 text-sm text-destructive", className)}
-      {...props}
-    >
-      {error?.message ?? submitError}
-    </p>
-  );
-});
-MessageInputError.displayName = "MessageInput.Error";
-
-/* ---------------------------------- */
-/* Exports */
-/* ---------------------------------- */
-
-export {
-  MessageInput,
-  MessageInputTextarea,
-  MessageInputSubmitButton,
-  MessageInputToolbar,
-  MessageInputError,
 };
+
+
+const MessageInputToolbar = ({ className, children, ...props }: any) => (
+  <div className={cn("mt-2 flex justify-end p-1", className)} {...props}>{children}</div>
+);
+
+export const MessageInputError = () => null;
+
+export { MessageInput, MessageInputToolbar };

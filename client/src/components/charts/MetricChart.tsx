@@ -26,7 +26,7 @@ export function MetricChart({ title, data, unit = '', color = '#3b82f6', loading
   let timeLabel = "N/A";
   let fullLabel = "N/A";
 
-  // 10 digits (Hour) ya 12 digits (Minute) dono ko match karein
+  // 10 digits (Hour) and 12 digits (Minute) match
   const timestampMatch = rawId.match(/\d{10,12}/);
   
   if (timestampMatch) {
@@ -36,7 +36,7 @@ export function MetricChart({ title, data, unit = '', color = '#3b82f6', loading
       const month = Number(ts.substring(4, 6)) - 1;
       const dd = Number(ts.substring(6, 8));
       const hh = Number(ts.substring(8, 10));
-      // Minute sirf tabhi jab length 12 ho
+      // Minute when length is 12
       const mm = ts.length >= 12 ? Number(ts.substring(10, 12)) : 0;
 
       const utcDate = new Date(Date.UTC(yyyy, month, dd, hh, mm));
@@ -53,7 +53,7 @@ export function MetricChart({ title, data, unit = '', color = '#3b82f6', loading
           day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false
         });
 
-        // Agar Date range hai aur naya din shuru ho raha hai, toh date dikhao
+        // If date range and new day starts, then show date
         if (ts.length === 10 && hh === 0) {
           timeLabel = utcDate.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
         }
@@ -91,7 +91,7 @@ export function MetricChart({ title, data, unit = '', color = '#3b82f6', loading
               fontSize={10} 
               tickLine={false} 
               axisLine={false}
-              minTickGap={40} // 👈 Space for Date labels
+              minTickGap={40} // Space for Date labels
               interval="preserveStartEnd"
             />
             <YAxis hide={false} stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} axisLine={false} />
@@ -106,7 +106,7 @@ export function MetricChart({ title, data, unit = '', color = '#3b82f6', loading
               strokeWidth={2.5}
               fillOpacity={1} 
               fill={`url(#gradient-${title.replace(/\s+/g, '-')})`}
-              connectNulls={true} // 👈 Taaki blank gap na dikhe
+              connectNulls={true} 
             />
           </AreaChart>
         </ResponsiveContainer>

@@ -2,9 +2,9 @@ import { z } from "zod";
 import { client } from "@/apollo/client";
 import { 
   GET_ALL_SERVICES, 
-  GET_SERVICE_INSTANCES,
   GET_ALL_DATABASES,
-  GET_SERVICE_ENDPOINTS 
+  GET_SERVICE_INSTANCES,
+  GET_SERVICE_ENDPOINTS,
 } from "@/apollo/queries/services";
 import { GET_SERVICE_METRICS } from "@/apollo/queries/metrics";
 import { GET_TRACES } from "@/apollo/queries/traces";
@@ -12,9 +12,23 @@ import { GET_TOPOLOGY } from "@/apollo/queries/topology";
 import { toJsonSchema } from "./json-schema";
 import { defineTool } from "@tambo-ai/react";
 
-/**
- * SkyWalking expects: "YYYY-MM-DD HHmm"
- */
+
+const parseToSkywalkingFormat = (dateStr: string) => {
+  if (!dateStr) return dateStr;
+  
+  // Remove any non-numeric characters except space and keep only the core parts
+  // Handles: "2026-02-07 1430", "07-02-2026 14:30", etc.
+  let cleaned = dateStr.replace(/[:/-]/g, '-'); 
+  
+  if (cleaned.includes("-") && cleaned.split("-")[0].length === 2) {
+     const parts = cleaned.split(" ");
+     const [d, m, y] = parts[0].split("-");
+     const time = parts[1] ? parts[1].replace(/-/g, "") : "0000";
+     return `${y}-${m}-${d} ${time}`;
+  }
+  return dateStr.replace(/-/g, '-'); // Ensure YYYY-MM-DD format
+};
+
 const formatSkywalkingTime = (date: Date) => {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -24,15 +38,16 @@ const formatSkywalkingTime = (date: Date) => {
   return `${y}-${m}-${d} ${hh}${mm}`;
 };
 
-/**
- * Dynamic Duration Helper for Custom Ranges
- */
 const getDynamicDuration = (startDate?: string, endDate?: string) => {
   if (startDate && endDate) {
-    return { start: startDate, end: endDate, step: "MINUTE" as const };
+    return { 
+      start: parseToSkywalkingFormat(startDate), 
+      end: parseToSkywalkingFormat(endDate), 
+      step: "MINUTE" as const 
+    };
   }
   const end = new Date();
-  const start = new Date(end.getTime() - 60 * 60 * 1000); // Default 1 hour
+  const start = new Date(end.getTime() - 60 * 60 * 1000);
   return {
     start: formatSkywalkingTime(start),
     end: formatSkywalkingTime(end),
@@ -40,12 +55,13 @@ const getDynamicDuration = (startDate?: string, endDate?: string) => {
   };
 };
 
+
 /**
- * 1. Tool: getServices (Silent Mode)
+ * 1. Tool: getServices
  */
 export const getServicesTool = defineTool({
   name: "getServices",
-  description: "INTERNAL: Fetch services for ServiceListCard. Do not echo JSON.",
+  description: "INTERNAL: Fetch services for ServiceListCard.",
   inputSchema: toJsonSchema(z.object({})),
   outputSchema: toJsonSchema(z.object({ services: z.array(z.any()) })),
   tool: async () => {
@@ -55,7 +71,6 @@ export const getServicesTool = defineTool({
         variables: { duration: getDynamicDuration() },
         fetchPolicy: "network-only",
       });
-      // ✅ Sirf 'services' return karo, extra 'success' ya 'message' nahi
       return { services: data?.getAllServices || [] };
     } catch (error) {
       return { services: [] };
@@ -64,15 +79,15 @@ export const getServicesTool = defineTool({
 });
 
 /**
- * 2. Tool: getServiceMetrics (Custom Date & Silent)
+ * 2. Tool: getServiceMetrics
  */
 export const getServiceMetricsTool = defineTool({
   name: "getServiceMetrics",
-  description: "INTERNAL: Fetch metrics for ServiceMetricsCard. Supports startDate/endDate.",
+  description: "INTERNAL: Fetch metrics for ServiceMetricsCard. Supports custom date range.",
   inputSchema: toJsonSchema(z.object({
     serviceId: z.string().describe("The ID of the service"),
-    startDate: z.string().optional().describe("Start date: 'YYYY-MM-DD HHmm'"),
-    endDate: z.string().optional().describe("End date: 'YYYY-MM-DD HHmm'"),
+    startDate: z.string().optional().describe("Start date: 'YYYY-MM-DD HHmm' or 'DD-MM-YYYY'"),
+    endDate: z.string().optional().describe("End date: 'YYYY-MM-DD HHmm' or 'DD-MM-YYYY'"),
   })),
   outputSchema: toJsonSchema(z.object({ 
     serviceName: z.string(),
@@ -93,15 +108,13 @@ export const getServiceMetricsTool = defineTool({
       const throughput = data?.getServiceThroughput?.values || [];
       const sla = data?.getServiceSLA?.values || [];
 
-      const avgLat = latency.length > 0 ? latency.reduce((sum: number, v: any) => sum + (v.value || 0), 0) / latency.length : 0;
-      const avgThr = throughput.length > 0 ? throughput.reduce((sum: number, v: any) => sum + (v.value || 0), 0) / throughput.length : 0;
-      const avgSla = sla.length > 0 ? sla.reduce((sum: number, v: any) => sum + (v.value || 0), 0) / sla.length : 0;
+      const getAvg = (arr: any[]) => arr.length > 0 ? arr.reduce((s, v) => s + (v.value || 0), 0) / arr.length : 0;
 
       return {
         serviceName: serviceId,
-        latency: Math.round(avgLat),
-        throughput: Math.round(avgThr),
-        sla: Math.round(avgSla * 100) / 100,
+        latency: Math.round(getAvg(latency)),
+        throughput: Math.round(getAvg(throughput)),
+        sla: Math.round(getAvg(sla) * 100) / 100,
       };
     } catch (error) {
       return { serviceName: serviceId, latency: 0, throughput: 0, sla: 0 };
@@ -110,18 +123,19 @@ export const getServiceMetricsTool = defineTool({
 });
 
 /**
- * 3. Tool: getTraces (Silent Mode)
+ * 3. Tool: getTraces (Fixed Date & Status filtering)
  */
 export const getTracesTool = defineTool({
   name: "getTraces",
-  description: "INTERNAL: Fetch traces for TraceListCard.",
+  description: "INTERNAL: Fetch traces for TraceListCard. Use traceState='SUCCESS' for healthy ones, 'ERROR' for failures.",
   inputSchema: toJsonSchema(z.object({
     serviceId: z.string().optional(),
-    startDate: z.string().optional(),
-    endDate: z.string().optional(),
+    startDate: z.string().optional().describe("Format: 'YYYY-MM-DD HHmm' or 'DD-MM-YYYY'"),
+    endDate: z.string().optional().describe("Format: 'YYYY-MM-DD HHmm' or 'DD-MM-YYYY'"),
+    traceState: z.enum(["ALL", "SUCCESS", "ERROR"]).default("ALL")
   })),
   outputSchema: toJsonSchema(z.object({ traces: z.array(z.any()) })),
-  tool: async ({ serviceId, startDate, endDate }) => {
+  tool: async ({ serviceId, startDate, endDate, traceState }) => {
     try {
       const duration = getDynamicDuration(startDate, endDate);
       const { data } = await client.query({
@@ -130,8 +144,8 @@ export const getTracesTool = defineTool({
           condition: {
             serviceId,
             queryDuration: duration,
-            paging: { pageNum: 1, pageSize: 10 },
-            traceState: "ALL",
+            paging: { pageNum: 1, pageSize: 15 },
+            traceState: traceState || "ALL",
             queryOrder: "BY_START_TIME"
           }
         },
@@ -145,7 +159,7 @@ export const getTracesTool = defineTool({
 });
 
 /**
- * 4. Tool: getTopology (Silent)
+ * 4. Tool: getTopology
  */
 export const getTopologyTool = defineTool({
   name: "getTopology",
@@ -168,7 +182,7 @@ export const getTopologyTool = defineTool({
 });
 
 /**
- * 5. Tool: getDatabases (Silent)
+ * 5. Tool: getDatabases
  */
 export const getDatabasesTool = defineTool({
   name: "getDatabases",
@@ -189,19 +203,88 @@ export const getDatabasesTool = defineTool({
   },
 });
 
+
 export const navigateTool = defineTool({
   name: "navigate_to_page",
-  description: "Navigate the UI to a specific page like services, traces, or topology.",
+  description: "Navigate to pages and sync filters like service, status, and duration and For service details, use path '/services/[serviceId]'. You can also specify a 'tab' like 'instances' or 'endpoints'.",
   inputSchema: toJsonSchema(z.object({
-    path: z.string().describe("The URL path to navigate to, e.g., '/', '/traces', '/topology'")
+    path: z.string(),
+    filters: z.object({
+      tab: z.enum(["overview", "instances", "endpoints"]).optional(),
+      traceState: z.enum(["ALL", "SUCCESS", "ERROR"]).optional(),
+      startDate: z.string().optional(),
+      endDate: z.string().optional(),
+      minDuration: z.string().optional(),
+      serviceId: z.string().optional(),
+    }).optional()
   })),
   outputSchema: toJsonSchema(z.object({ success: z.boolean() })),
-  tool: async ({ path }) => {
-    // 🔥 Ye event frontend (AppLayout) listen karega
-    window.dispatchEvent(new CustomEvent("tambo:navigate", { detail: { path } }));
+  tool: async ({ path, filters }) => {
+    // 1. First trigger Navigation 
+    window.dispatchEvent(new CustomEvent("tambo:navigate", { detail: { path, filters } }));
+    
+    if (filters) {
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent("skyobserv:query-update", { detail: { filters } }));
+      }, 500);
+    }
+    
     return { success: true };
   },
 });
+
+/** 5. Fetch Service Endpoints */
+export const getEndpointsTool = defineTool({
+  name: "getEndpoints",
+  description: "INTERNAL: Fetch API endpoints for a specific service.",
+  inputSchema: toJsonSchema(z.object({
+    serviceId: z.string().describe("The ID of the service"),
+  })),
+  outputSchema: toJsonSchema(z.object({ endpoints: z.array(z.any()) })),
+  tool: async ({ serviceId }) => {
+    try {
+      const { data } = await client.query({
+        query: GET_SERVICE_ENDPOINTS,
+        variables: { serviceId, keyword: '' },
+        fetchPolicy: "network-only",
+      });
+
+      const rawData = data?.endpoints || [];
+
+      const formattedEndpoints = rawData.map((e: any) => ({
+        id: e.id,
+        name: e.name || "Unknown Path" 
+      }));
+
+      return { endpoints: formattedEndpoints };
+    } catch (error) {
+      console.error("Fetch Error:", error);
+      return { endpoints: [] };
+    }
+  },
+});
+
+/** 6. Fetch Service Instances */
+export const getInstancesTool = defineTool({
+  name: "getInstances",
+  description: "INTERNAL: Fetch active instances/nodes for a specific service.",
+  inputSchema: toJsonSchema(z.object({
+    serviceId: z.string(),
+    startDate: z.string().optional(),
+    endDate: z.string().optional(),
+  })),
+  outputSchema: toJsonSchema(z.object({ instances: z.array(z.any()) })),
+  tool: async ({ serviceId, startDate, endDate }) => {
+    const duration = getDynamicDuration(startDate, endDate);
+    const { data } = await client.query({
+      query: GET_SERVICE_INSTANCES,
+      variables: { serviceId, duration },
+      fetchPolicy: "network-only",
+    });
+    return { instances: data?.getServiceInstances || [] };
+  },
+});
+
 
 export const allTools = [
   getServicesTool,
@@ -209,5 +292,7 @@ export const allTools = [
   getTracesTool,
   getTopologyTool,
   getDatabasesTool,
-  navigateTool
+  navigateTool,
+  getInstancesTool,
+  getEndpointsTool
 ];

@@ -159,13 +159,7 @@ const ThreadContentMessages = React.forwardRef<
                   message.role === "assistant" ? "w-full" : "max-w-3xl",
                 )}
               >
-                {/* <MessageContent
-                  className={
-                    message.role === "assistant"
-                      ? "text-primary font-sans"
-                      : "text-primary bg-container hover:bg-backdrop font-sans"
-                  }
-                /> */}
+
                   <MessageContent
                   className={
                     message.role === "assistant"

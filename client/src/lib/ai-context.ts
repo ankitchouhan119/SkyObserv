@@ -1,5 +1,3 @@
-// client/src/lib/ai-context.ts
-
 let aiContext: any = {};
 
 export const setAIContext = (ctx: any) => {

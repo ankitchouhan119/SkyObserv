@@ -1,4 +1,3 @@
-// src/components/common/CustomRangePicker.tsx
 import React, { useState } from 'react';
 import { useDurationStore } from '@/store/useDurationStore';
 import { Button } from '@/components/ui/button';
@@ -13,7 +12,7 @@ export function CustomRangePicker() {
 
   const handleApply = () => {
     if (start && end) {
-      setCustomRange(start, end); // Ab ye sirf dates bhejega
+      setCustomRange(start, end); // It sends date only
     }
   };
 
@@ -30,7 +29,7 @@ export function CustomRangePicker() {
           <div className="space-y-2">
             <label className="text-[10px] uppercase font-bold text-muted-foreground">Start Date</label>
             <Input 
-              type="date" // 🔥 FIX: Sirf Date mangega, Time nahi
+              type="date" // only asks for date not time
               className="bg-background border-white/5"
               value={start}
               onChange={(e) => setStart(e.target.value)}
@@ -40,7 +39,7 @@ export function CustomRangePicker() {
           <div className="space-y-2">
             <label className="text-[10px] uppercase font-bold text-muted-foreground">End Date</label>
             <Input 
-              type="date" // 🔥 FIX: Sirf Date mangega, Time nahi
+              type="date" 
               className="bg-background border-white/5"
               value={end}
               onChange={(e) => setEnd(e.target.value)}

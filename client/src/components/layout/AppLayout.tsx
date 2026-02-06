@@ -1,26 +1,38 @@
+"use client";
+
 import React from 'react';
 import { Link, useLocation } from 'wouter';
 import { Activity, Layers, GitBranch, Database } from 'lucide-react';
 import { DurationSelector } from '@/components/common/DurationSelector';
 import { CustomRangePicker } from '../common/CustomRangePicker';
 import { MessageThreadCollapsible } from '../tambo/message-thread-collapsible';
-
-// 🔥 Tambo Imports
 import { TamboThreadProvider, useTamboContextHelpers } from "@tambo-ai/react";
+import { TAMBO_SYSTEM_PROMPT } from '../tambo/prompt';
 
 interface AppLayoutProps {
   children: React.ReactNode;
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const { addContextHelper, removeContextHelper } = useTamboContextHelpers();
-  const [, setLocation] = useLocation();
 
-  React.useEffect(() => {
+  // AI Navigation & Filter Sync Bridge
+React.useEffect(() => {
     const handleNavigation = (e: any) => {
-      if (e.detail?.path) {
-        setLocation(e.detail.path); // 🔥 AI ne path bheja, humne navigate kar diya!
+      const { path, filters } = e.detail || {};
+      
+      if (path) {
+        setLocation(path);
+      }
+
+      // if navigation has filter, then wait and re-send
+      if (filters) {
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent("skyobserv:query-update", { 
+            detail: { filters } 
+          }));
+        }, 600);
       }
     };
 
@@ -28,18 +40,38 @@ export function AppLayout({ children }: AppLayoutProps) {
     return () => window.removeEventListener("tambo:navigate", handleNavigation);
   }, [setLocation]);
 
-  // 🔥 AI Global Context Bridge
+  // AI Global Context Bridge with LIVE TIME
   React.useEffect(() => {
     const helperId = "global_observability";
     
-    addContextHelper(helperId, () => ({
-      currentPath: location,
-      appName: "SkyObserv",
-      status: "connected",
-      instruction: "User is on " + location + ". Analyze metrics if on service page."
-    }));
-
-    return () => removeContextHelper(helperId);
+    const updateContext = () => {
+      const now = new Date();
+      const pad = (n: number) => String(n).padStart(2, '0');
+      
+      // UTC Time
+      const utcTime = `${now.getUTCFullYear()}-${pad(now.getUTCMonth() + 1)}-${pad(now.getUTCDate())} ${pad(now.getUTCHours())}:${pad(now.getUTCMinutes())}:${pad(now.getUTCSeconds())}`;
+      
+      // IST Time (UTC + 5:30)
+      const istDate = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
+      const istTime = `${istDate.getUTCFullYear()}-${pad(istDate.getUTCMonth() + 1)}-${pad(istDate.getUTCDate())} ${pad(istDate.getUTCHours())}:${pad(istDate.getUTCMinutes())}:${pad(istDate.getUTCSeconds())}`;
+      
+      addContextHelper(helperId, () => ({
+        currentPath: location,
+        appName: "SkyObserv",
+        status: "connected",
+        currentTimeIST: istTime,
+        currentTimeUTC: utcTime,
+        instruction: `Current IST: ${istTime}, UTC: ${utcTime}. User is on ${location}.`
+      }));
+    };
+    
+    updateContext();
+    const interval = setInterval(updateContext, 60000);
+    
+    return () => {
+      clearInterval(interval);
+      removeContextHelper(helperId);
+    };
   }, [location, addContextHelper, removeContextHelper]);
 
   const navItems = [
@@ -49,16 +81,71 @@ export function AppLayout({ children }: AppLayoutProps) {
     { label: 'Databases', href: '/databases', icon: Database },
   ];
 
+  // Generate Dynamic Prompt with LIVE TIME
+  const getDynamicPrompt = () => {
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, '0');
+
+    // UTC Time
+    const utcYear = now.getUTCFullYear();
+    const utcMonth = pad(now.getUTCMonth() + 1);
+    const utcDate = pad(now.getUTCDate());
+    const utcHours = pad(now.getUTCHours());
+    const utcMinutes = pad(now.getUTCMinutes());
+    const utcSeconds = pad(now.getUTCSeconds());
+    
+    const utcTime = `${utcYear}-${utcMonth}-${utcDate} ${utcHours}:${utcMinutes}:${utcSeconds}`;
+
+    // IST Time (UTC + 5:30)
+    const istDate = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
+    const istYear = istDate.getUTCFullYear();
+    const istMonth = pad(istDate.getUTCMonth() + 1);
+    const istDay = pad(istDate.getUTCDate());
+    const istHours = pad(istDate.getUTCHours());
+    const istMinutes = pad(istDate.getUTCMinutes());
+    const istSeconds = pad(istDate.getUTCSeconds());
+    
+    const istTime = `${istYear}-${istMonth}-${istDay} ${istHours}:${istMinutes}:${istSeconds}`;
+
+    console.log('Current Time:', { IST: istTime, UTC: utcTime });
+
+    // Replace placeholders
+    let dynamicPrompt = TAMBO_SYSTEM_PROMPT
+      .replaceAll("{{IST_NOW}}", istTime)
+      .replaceAll("{{UTC_NOW}}", utcTime);
+
+    // Force inject at start
+    dynamicPrompt = `LIVE SYSTEM TIME:
+IST: ${istTime}
+UTC: ${utcTime}
+
+${dynamicPrompt}`;
+
+    return dynamicPrompt;
+  };
+
+  // Use state to force re-render with updated time
+  const [dynamicPrompt, setDynamicPrompt] = React.useState(getDynamicPrompt());
+
+  // Update prompt every 30 seconds
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      setDynamicPrompt(getDynamicPrompt());
+    }, 30000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
   return (
-    <TamboThreadProvider contextKey="sky-observ-v5">
-      <div className="min-h-screen bg-background text-foreground flex flex-col md:flex-row font-sans">
+    <TamboThreadProvider contextKey="sky-observ-v5" systemPrompt={dynamicPrompt}>
+      <div className="min-h-screen bg-[#0a0a0a] text-foreground flex flex-col md:flex-row font-sans">
         {/* Sidebar */}
         <aside className="w-full md:w-64 border-r border-white/5 bg-card/50 flex-shrink-0 flex flex-col h-screen sticky top-0 z-20">
           <div className="p-6 border-b border-white/5 flex items-center gap-3">
             <div className="w-8 h-8 rounded bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center shadow-lg">
               <Activity className="h-5 w-5 text-white" />
             </div>
-            <span className="font-bold text-lg tracking-tight">SkyObserv</span>
+            <span className="font-bold text-lg tracking-tight text-white">SkyObserv</span>
           </div>
 
           <nav className="flex-1 p-4 space-y-1">
@@ -80,9 +167,9 @@ export function AppLayout({ children }: AppLayoutProps) {
           </nav>
 
           <div className="p-4 border-t border-white/5">
-            <div className="flex items-center gap-3 px-3 py-2 text-[10px] text-muted-foreground font-mono uppercase tracking-widest">
+            <div className="flex items-center gap-3 px-3 py-2 text-[10px] text-muted-foreground font-mono tracking-widest">
               <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_#22c55e] animate-pulse" />
-              AI Agent Active
+              SkyObserv Observability
             </div>
           </div>
         </aside>
@@ -90,8 +177,10 @@ export function AppLayout({ children }: AppLayoutProps) {
         {/* Main Content */}
         <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
           <header className="h-16 border-b border-white/5 flex items-center justify-between px-6 bg-background/50 backdrop-blur-md sticky top-0 z-10">
-            <h1 className="text-xl font-semibold text-white">Dashboard</h1>
-            <div className="flex items-center gap-4">
+            <h1 className="text-xl font-semibold text-white">
+              {navItems.find(i => i.href === location)?.label || 'Dashboard'}
+            </h1>
+            <div className="flex items-center gap-4 text-white">
               <CustomRangePicker />
               <DurationSelector />
               <div className="w-8 h-8 rounded-full bg-secondary border border-white/10 flex items-center justify-center text-xs font-bold text-muted-foreground">
@@ -105,7 +194,6 @@ export function AppLayout({ children }: AppLayoutProps) {
           </div>
         </main>
       </div>
-      {/* AI Chat Widget */}
       <MessageThreadCollapsible />
     </TamboThreadProvider>
   );

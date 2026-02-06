@@ -63,17 +63,54 @@ export interface MessageThreadCollapsibleProps
 /**
  * Custom hook for managing collapsible state with keyboard shortcuts
  */
+// const useCollapsibleState = (defaultOpen = false) => {
+//   const [isOpen, setIsOpen] = React.useState(defaultOpen);
+//   const isMac =
+//     typeof navigator !== "undefined" && navigator.platform.startsWith("Mac");
+//   const shortcutText = isMac ? "⌘K" : "Ctrl+K";
+
+//   React.useEffect(() => {
+//     const handleKeyDown = (event: KeyboardEvent) => {
+//       if ((event.metaKey || event.ctrlKey) && event.key === "k") {
+//         event.preventDefault();
+//         setIsOpen((prev) => !prev);
+//       }
+//     };
+
+//     document.addEventListener("keydown", handleKeyDown);
+//     return () => document.removeEventListener("keydown", handleKeyDown);
+//   }, []);
+
+//   return { isOpen, setIsOpen, shortcutText };
+// };
+
+
+
+/**
+ * Custom hook for managing collapsible state with keyboard shortcuts and persistence
+ */
 const useCollapsibleState = (defaultOpen = false) => {
-  const [isOpen, setIsOpen] = React.useState(defaultOpen);
+  const [isOpen, setIsOpen] = React.useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("skyobserv_chat_open");
+      return saved !== null ? JSON.parse(saved) : defaultOpen;
+    }
+    return defaultOpen;
+  });
+
   const isMac =
     typeof navigator !== "undefined" && navigator.platform.startsWith("Mac");
   const shortcutText = isMac ? "⌘K" : "Ctrl+K";
 
   React.useEffect(() => {
+    localStorage.setItem("skyobserv_chat_open", JSON.stringify(isOpen));
+  }, [isOpen]);
+
+  React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key === "k") {
         event.preventDefault();
-        setIsOpen((prev) => !prev);
+        setIsOpen((prev: boolean) => !prev);
       }
     };
 
@@ -83,6 +120,7 @@ const useCollapsibleState = (defaultOpen = false) => {
 
   return { isOpen, setIsOpen, shortcutText };
 };
+
 
 /**
  * Props for the CollapsibleContainer component

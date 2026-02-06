@@ -37,6 +37,19 @@ export default function ServiceDetailPage() {
 
   const { addContextHelper, removeContextHelper } = useTamboContextHelpers();
 
+  const [activeTab, setActiveTab] = React.useState("overview");
+
+  React.useEffect(() => {
+    const handleUpdate = (e: any) => {
+      const { filters } = e.detail;
+      if (filters?.tab) {
+        setActiveTab(filters.tab); // AI will switch tabs
+      }
+    };
+    window.addEventListener("skyobserv:query-update", handleUpdate);
+    return () => window.removeEventListener("skyobserv:query-update", handleUpdate);
+  }, []);
+
   React.useEffect(() => {
     // AI Context update logic
     if (!latency.loading && serviceId) {
@@ -68,8 +81,8 @@ export default function ServiceDetailPage() {
           </div>
           <Button variant="outline" size="sm" className="bg-card/50 border-white/10 text-white"><RefreshCw className="w-3.5 h-3.5 mr-2" /> Refresh</Button>
         </div>
-
-        <Tabs defaultValue="overview" className="space-y-6">
+        
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="bg-card/50 border border-white/10 p-1">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="instances">Instances ({instances.length})</TabsTrigger>

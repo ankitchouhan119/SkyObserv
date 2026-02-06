@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Activity, Zap, CheckCircle } from "lucide-react";
 
 export const ServiceMetricsCard = (props: any) => {
-  // AI props handle karna
+  // AI props handle
   const data = props.args || props;
   const { serviceName, latency, throughput, sla, status = "healthy", insight } = data;
 

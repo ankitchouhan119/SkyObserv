@@ -12,10 +12,14 @@ interface DurationState {
   label: string;
   durationObj: DurationObj;
   setDuration: (label: string, minutes: number, step: Step) => void;
-  setCustomRange: (startDate: string, endDate: string) => void; // 👈 1. Interface mein add karein
+  setCustomRange: (startDate: string, endDate: string) => void; 
   refresh: () => void;
 }
 
+/**
+ * Utility to format Date to SkyWalking string format
+ * Standardizes the "YYYY-MM-DD HHmm" or "YYYY-MM-DD HH" requirements.
+ */
 const formatSkyTime = (date: Date, step: Step) => {
   const pad = (n: number) => String(n).padStart(2, '0');
   const yyyy = date.getUTCFullYear();
@@ -38,6 +42,7 @@ export const useDurationStore = create<DurationState>((set, get) => ({
   
   setDuration: (label, minutes, step) => {
     const now = new Date();
+    // 2 min offset for data consistency
     const end = new Date(now.getTime() - 2 * 60 * 1000); 
     const start = new Date(end.getTime() - minutes * 60 * 1000);
     
@@ -51,32 +56,35 @@ export const useDurationStore = create<DurationState>((set, get) => ({
     });
   },
 
-  // 🔥 2. Is function ko sahi se yahan define karein
+ 
+
 setCustomRange: (startDate: string, endDate: string) => {
   const pad = (n: number) => String(n).padStart(2, '0');
   
-  const start = new Date(startDate);
-  const end = new Date(endDate);
+  // Date parsing logic
+  const parse = (d: string) => d.includes(' ') ? new Date(d.split(' ')[0]) : new Date(d);
+  const start = parse(startDate);
+  const end = parse(endDate);
 
   if (isNaN(start.getTime()) || isNaN(end.getTime())) return;
 
-  // SkyWalking HOUR format: YYYY-MM-DD HH
-  const startStr = `${start.getFullYear()}-${pad(start.getMonth() + 1)}-${pad(start.getDate())} 00`;
-  const endStr = `${end.getFullYear()}-${pad(end.getMonth() + 1)}-${pad(end.getDate())} 23`;
+  const startStr = `${start.getFullYear()}-${pad(start.getMonth() + 1)}-${pad(start.getDate())} 0000`;
+  const endStr = `${end.getFullYear()}-${pad(end.getMonth() + 1)}-${pad(end.getDate())} 2359`;
 
   set({
     label: 'Custom Date',
     durationObj: {
       start: startStr,
       end: endStr,
-      step: 'HOUR', // 🔥 Fixed to HOUR for performance
+      step: 'MINUTE', 
     },
   });
 },
 
   refresh: () => {
     const { label } = get();
-    if (label === 'Custom Date') return; // Custom date refresh nahi hogi
+    // Custom date stays static until manual change
+    if (label === 'Custom Date') return;
     
     let mins = 15;
     if (label.includes('30')) mins = 30;

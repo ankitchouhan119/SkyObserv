@@ -2,11 +2,11 @@ import { useQuery } from '@apollo/client';
 import { GET_LINEAR_INT_VALUES, METRICS } from '@/apollo/queries/metrics';
 import { useDurationStore } from '@/store/useDurationStore';
 
-// Scope parameter add kiya taaki Endpoint page par bhi kaam kare
+
 export function useServiceMetrics(entityId: string, scope: 'Service' | 'Endpoint' = 'Service') {
   const { durationObj } = useDurationStore();
 
-  // Metrics name select karne ka logic
+  // Metrics name select logic
   const getMetricNames = () => {
     if (scope === 'Endpoint') {
       return {

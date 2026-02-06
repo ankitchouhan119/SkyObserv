@@ -1,19 +1,19 @@
 import { Card } from "@/components/ui/card";
 import { Server, Activity, Layers, AlertCircle } from "lucide-react";
 
-// 🔥 Defensive approach: Props ko directly destructure nahi karenge
+
 export function ServiceListCard(props: any) {
-  // AI props 'args' mein bhejta hai, toh hum check karte hain
+
   const data = props.args || props;
   
-  // 🔥 Fallback: Agar services undefined hai toh empty array use karo
+
   const services = data.services || [];
 
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
         <Server className="w-5 h-5 text-primary" />
-        {/* Ab length check safe hai */}
+
         <h3 className="text-lg font-semibold">Services ({services.length})</h3>
       </div>
       
@@ -36,7 +36,7 @@ export function ServiceListCard(props: any) {
                   </p>
                 )}
                 
-                {/* Optional chaining for layers */}
+
                 {service.layers && service.layers.length > 0 && (
                   <div className="flex items-center gap-2 text-xs">
                     <Layers className="w-3 h-3" />
@@ -61,7 +61,7 @@ export function ServiceListCard(props: any) {
           </Card>
         ))}
 
-        {/* Empty state handles no data gracefully */}
+         {/* Empty state handles no data gracefully  */}
         {services.length === 0 && (
           <Card className="p-8 text-center border-dashed bg-card/10 border-white/10">
             <AlertCircle className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
