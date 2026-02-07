@@ -259,26 +259,26 @@ export const MessageThreadCollapsible = React.forwardRef<
     icon: <Activity className="h-5 w-5 text-white" />
   };
 
-  const defaultSuggestions: Suggestion[] = [
-    {
-      id: "suggestion-1",
-      title: "Get started",
-      detailedSuggestion: "What can you help me with?",
-      messageId: "welcome-query",
-    },
-    {
-      id: "suggestion-2",
-      title: "Learn more",
-      detailedSuggestion: "Tell me about your capabilities.",
-      messageId: "capabilities-query",
-    },
-    {
-      id: "suggestion-3",
-      title: "Examples",
-      detailedSuggestion: "Show me some example queries I can try.",
-      messageId: "examples-query",
-    },
-  ];
+const defaultSuggestions: Suggestion[] = [
+  {
+    id: "s-1",
+    title: "Check Service Health",
+    detailedSuggestion: "Show me the health status of all running services.",
+    messageId: "health-check",
+  },
+  {
+    id: "s-2",
+    title: "Show Abnormal Traces",
+    detailedSuggestion: "List all traces that have errors or high latency in the last hour.",
+    messageId: "trace-check",
+  },
+  {
+    id: "s-3",
+    title: "View Global Topology",
+    detailedSuggestion: "Render the dependency graph for the entire system.",
+    messageId: "topo-check",
+  },
+];
 
   return (
     <CollapsibleContainer
@@ -322,7 +322,7 @@ export const MessageThreadCollapsible = React.forwardRef<
           </div>
 
           {/* Message suggestions */}
-          <MessageSuggestions initialSuggestions={defaultSuggestions}>
+          <MessageSuggestions initialSuggestions={defaultSuggestions} autoRefresh={true}>
             <MessageSuggestionsList />
           </MessageSuggestions>
         </div>

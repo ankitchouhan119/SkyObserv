@@ -1,23 +1,17 @@
 "use client";
 
-// import { MessageGenerationStage } from "@/components/ui/message-generation-stage";
+import * as React from "react";
+import { useEffect, useRef } from "react";
+import { Loader2Icon, Sparkles } from "lucide-react";
+
 import { MessageGenerationStage } from "./message-generation-stage";
 import { Tooltip, TooltipProvider } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import type { Suggestion, TamboThread } from "@tambo-ai/react";
 import { useTambo, useTamboSuggestions } from "@tambo-ai/react";
-import { Loader2Icon } from "lucide-react";
-import * as React from "react";
-import { useEffect, useRef } from "react";
 
 /**
- * @typedef MessageSuggestionsContextValue
- * @property {Array} suggestions - Array of suggestion objects
- * @property {string|null} selectedSuggestionId - ID of the currently selected suggestion
- * @property {function} accept - Function to accept a suggestion
- * @property {boolean} isGenerating - Whether suggestions are being generated
- * @property {Error|null} error - Any error from generation
- * @property {object} thread - The current Tambo thread
+ * Context Value Interface
  */
 interface MessageSuggestionsContextValue {
   suggestions: Suggestion[];
@@ -29,343 +23,190 @@ interface MessageSuggestionsContextValue {
   isMac: boolean;
 }
 
-/**
- * React Context for sharing suggestion data and functions among sub-components.
- * @internal
- */
-const MessageSuggestionsContext =
-  React.createContext<MessageSuggestionsContextValue | null>(null);
+const MessageSuggestionsContext = React.createContext<MessageSuggestionsContextValue | null>(null);
 
-/**
- * Hook to access the message suggestions context.
- * @returns {MessageSuggestionsContextValue} The message suggestions context value.
- * @throws {Error} If used outside of MessageSuggestions.
- * @internal
- */
 const useMessageSuggestionsContext = () => {
   const context = React.useContext(MessageSuggestionsContext);
   if (!context) {
-    throw new Error(
-      "MessageSuggestions sub-components must be used within a MessageSuggestions",
-    );
+    throw new Error("Sub-components must be used within a MessageSuggestions");
   }
   return context;
 };
 
-/**
- * Props for the MessageSuggestions component.
- * Extends standard HTMLDivElement attributes.
- */
-export interface MessageSuggestionsProps
-  extends React.HTMLAttributes<HTMLDivElement> {
-  /** Maximum number of suggestions to display (default: 3) */
+export interface MessageSuggestionsProps extends React.HTMLAttributes<HTMLDivElement> {
   maxSuggestions?: number;
-  /** The child elements to render within the container. */
-  children?: React.ReactNode;
-  /** Pre-seeded suggestions to display initially */
   initialSuggestions?: Suggestion[];
+  autoRefresh?: boolean;
+  refreshInterval?: number;
 }
 
-/**
- * The root container for message suggestions.
- * It establishes the context for its children and handles overall state management.
- * @component MessageSuggestions
- * @example
- * ```tsx
- * <MessageSuggestions maxSuggestions={3}>
- *   <MessageSuggestions.Status />
- *   <MessageSuggestions.List />
- * </MessageSuggestions>
- * ```
- */
-const MessageSuggestions = React.forwardRef<
-  HTMLDivElement,
-  MessageSuggestionsProps
->(
-  (
-    {
-      children,
-      className,
-      maxSuggestions = 3,
-      initialSuggestions = [],
-      ...props
-    },
-    ref,
-  ) => {
+const MessageSuggestions = React.forwardRef<HTMLDivElement, MessageSuggestionsProps>(
+  ({ children, className, maxSuggestions = 3, initialSuggestions = [], autoRefresh = true, refreshInterval = 10000, ...props }, ref) => {
     const { thread } = useTambo();
     const {
       suggestions: generatedSuggestions,
       selectedSuggestionId,
       accept,
       generateResult: { isPending: isGenerating, error },
+      regenerate,
     } = useTamboSuggestions({ maxSuggestions });
 
-    // Combine initial and generated suggestions, but only use initial ones when thread is empty
+    const lastMessageIdRef = useRef<string | null>(null);
+
     const suggestions = React.useMemo(() => {
-      // Only use pre-seeded suggestions if thread is empty
-      if (!thread?.messages?.length && initialSuggestions.length > 0) {
-        return initialSuggestions.slice(0, maxSuggestions);
+      const messages = thread?.messages || [];
+      const hasMessages = messages.length > 0;
+
+
+      if (generatedSuggestions && generatedSuggestions.length > 0) {
+        console.log("RECEIVING FROM AI:", generatedSuggestions);
+        return generatedSuggestions;
       }
-      // Otherwise use generated suggestions
-      return generatedSuggestions;
-    }, [
-      thread?.messages?.length,
-      generatedSuggestions,
-      initialSuggestions,
-      maxSuggestions,
-    ]);
 
-    const isMac =
-      typeof navigator !== "undefined" && navigator.platform.startsWith("Mac");
+      if (hasMessages) {
+        const lastMessage = messages[messages.length - 1];
+        let lastContent = "";
 
-    // Track the last AI message ID to detect new messages
-    const lastAiMessageIdRef = useRef<string | null>(null);
-    const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+        if (typeof lastMessage.content === "string") {
+          lastContent = lastMessage.content.toLowerCase();
+        } else if (Array.isArray(lastMessage.content)) {
+          lastContent = lastMessage.content
+            .map((c: any) => c.text || "")
+            .join(" ")
+            .toLowerCase();
+        }
+
+        if (lastContent.includes("service") || lastContent.includes("health")) {
+          return [
+            { id: "f-1", title: "Show all services", detailedSuggestion: "Get full service health", messageId: "m1" },
+            { id: "f-2", title: "Show abnormal only", detailedSuggestion: "Filter unhealthy services", messageId: "m2" },
+            { id: "f-3", title: "Check Instances", detailedSuggestion: "Show service pods", messageId: "m3" }
+          ];
+        }
+
+        if (lastContent.includes("trace") || lastContent.includes("error")) {
+          return [
+            { id: "f-4", title: "Find slow traces", detailedSuggestion: "Show high latency traces", messageId: "m4" },
+            { id: "f-5", title: "Show error logs", detailedSuggestion: "Get logs for errors", messageId: "m5" }
+          ];
+        }
+
+        if (lastContent.includes("topology") || lastContent.includes("dependency")) {
+          return [
+            { id: "f-6", title: "Global topology", detailedSuggestion: "View system map", messageId: "m6" },
+            { id: "f-7", title: "Show downstream", detailedSuggestion: "Check service dependencies", messageId: "m7" }
+          ];
+        }
+      }
+
+      // 3. Static Fallback
+      return initialSuggestions.slice(0, maxSuggestions);
+    }, [thread?.messages, generatedSuggestions, initialSuggestions, maxSuggestions]);
+
+
+    useEffect(() => {
+      if (!thread?.messages || thread.messages.length === 0) return;
+
+      const lastMessage = thread.messages[thread.messages.length - 1];
+      if (lastMessage.id !== lastMessageIdRef.current && !isGenerating) {
+        lastMessageIdRef.current = lastMessage.id;
+
+        const timer = setTimeout(() => {
+          if (regenerate) {
+            console.log("Context updated. Requesting AI for dynamic suggestions...");
+            regenerate();
+          }
+        }, 1200);
+        return () => clearTimeout(timer);
+      }
+    }, [thread?.messages, regenerate, isGenerating]);
+
+    const isMac = typeof navigator !== "undefined" && navigator.platform.startsWith("Mac");
 
     const contextValue = React.useMemo(
-      () => ({
-        suggestions,
-        selectedSuggestionId,
-        accept,
-        isGenerating,
-        error,
-        thread,
-        isMac,
-      }),
-      [
-        suggestions,
-        selectedSuggestionId,
-        accept,
-        isGenerating,
-        error,
-        thread,
-        isMac,
-      ],
+      () => ({ suggestions, selectedSuggestionId, accept, isGenerating, error, thread, isMac }),
+      [suggestions, selectedSuggestionId, accept, isGenerating, error, thread, isMac]
     );
-
-    // Find the last AI message
-    const lastAiMessage = thread?.messages
-      ? [...thread.messages].reverse().find((msg) => msg.role === "assistant")
-      : null;
-
-    // When a new AI message appears, update the reference
-    useEffect(() => {
-      if (lastAiMessage && lastAiMessage.id !== lastAiMessageIdRef.current) {
-        lastAiMessageIdRef.current = lastAiMessage.id;
-
-        if (loadingTimeoutRef.current) {
-          clearTimeout(loadingTimeoutRef.current);
-        }
-
-        loadingTimeoutRef.current = setTimeout(() => {}, 5000);
-      }
-
-      return () => {
-        if (loadingTimeoutRef.current) {
-          clearTimeout(loadingTimeoutRef.current);
-        }
-      };
-    }, [lastAiMessage, suggestions.length]);
-
-    // Handle keyboard shortcuts for selecting suggestions
-    useEffect(() => {
-      if (!suggestions || suggestions.length === 0) return;
-
-      const handleKeyDown = (event: KeyboardEvent) => {
-        const modifierPressed = isMac
-          ? event.metaKey && event.altKey
-          : event.ctrlKey && event.altKey;
-
-        if (modifierPressed) {
-          const keyNum = parseInt(event.key);
-          if (!isNaN(keyNum) && keyNum > 0 && keyNum <= suggestions.length) {
-            event.preventDefault();
-            const suggestionIndex = keyNum - 1;
-            accept({ suggestion: suggestions[suggestionIndex] as Suggestion });
-          }
-        }
-      };
-
-      document.addEventListener("keydown", handleKeyDown);
-
-      return () => {
-        document.removeEventListener("keydown", handleKeyDown);
-      };
-    }, [suggestions, accept, isMac]);
-
-    // If we have no messages yet and no initial suggestions, render nothing
-    if (!thread?.messages?.length && initialSuggestions.length === 0) {
-      return null;
-    }
 
     return (
       <MessageSuggestionsContext.Provider value={contextValue}>
-        <TooltipProvider>
-          <div
-            ref={ref}
-            className={cn("px-4 pb-2", className)}
-            data-slot="message-suggestions-container"
-            {...props}
-          >
-            {children}
-          </div>
-        </TooltipProvider>
+        <div ref={ref} className={cn("w-full transition-all", className)} {...props}>
+          {children}
+        </div>
       </MessageSuggestionsContext.Provider>
     );
-  },
+  }
 );
 MessageSuggestions.displayName = "MessageSuggestions";
 
 /**
- * Props for the MessageSuggestionsStatus component.
- * Extends standard HTMLDivElement attributes.
+ * Status Component
  */
-export type MessageSuggestionsStatusProps =
-  React.HTMLAttributes<HTMLDivElement>;
+const MessageSuggestionsStatus = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  ({ className, ...props }, ref) => {
+    const { error, isGenerating, thread } = useMessageSuggestionsContext();
 
-/**
- * Displays loading, error, or generation stage information.
- * Automatically connects to the context to show the appropriate status.
- * @component MessageSuggestions.Status
- * @example
- * ```tsx
- * <MessageSuggestions>
- *   <MessageSuggestions.Status />
- *   <MessageSuggestions.List />
- * </MessageSuggestions>
- * ```
- */
-const MessageSuggestionsStatus = React.forwardRef<
-  HTMLDivElement,
-  MessageSuggestionsStatusProps
->(({ className, ...props }, ref) => {
-  const { error, isGenerating, thread } = useMessageSuggestionsContext();
-
-  return (
-    <div
-      ref={ref}
-      className={cn(
-        "p-2 rounded-md text-sm bg-muted/30",
-        !error &&
-          !isGenerating &&
-          (!thread?.generationStage || thread.generationStage === "COMPLETE")
-          ? "p-0 min-h-0 mb-0"
-          : "",
-        className,
-      )}
-      data-slot="message-suggestions-status"
-      {...props}
-    >
-      {/* Error state */}
-      {error && (
-        <div className="p-2 rounded-md text-sm bg-red-50 text-red-500">
-          <p>{error.message}</p>
+    return (
+      <div ref={ref} className={cn("px-4 py-2 text-sm", className)} {...props}>
+        {error && <div className="text-destructive font-medium">{error.message}</div>}
+        <div className="min-h-[24px]">
+          {thread?.generationStage && thread.generationStage !== "COMPLETE" ? (
+            <MessageGenerationStage />
+          ) : isGenerating ? (
+            <div className="flex items-center gap-2 text-muted-foreground animate-pulse">
+              <Loader2Icon className="h-4 w-4 animate-spin" />
+              <span>Syncing dynamic suggestions...</span>
+            </div>
+          ) : null}
         </div>
-      )}
-
-      {/* Always render a container for generation stage to prevent layout shifts */}
-      <div className="generation-stage-container">
-        {thread?.generationStage && thread.generationStage !== "COMPLETE" ? (
-          <MessageGenerationStage />
-        ) : isGenerating ? (
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Loader2Icon className="h-4 w-4 animate-spin" />
-            <p>Generating suggestions...</p>
-          </div>
-        ) : null}
       </div>
-    </div>
-  );
-});
+    );
+  }
+);
 MessageSuggestionsStatus.displayName = "MessageSuggestions.Status";
 
 /**
- * Props for the MessageSuggestionsList component.
- * Extends standard HTMLDivElement attributes.
+ * List Component
  */
-export type MessageSuggestionsListProps = React.HTMLAttributes<HTMLDivElement>;
+const MessageSuggestionsList = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  ({ className, ...props }, ref) => {
+    const { suggestions, selectedSuggestionId, accept, isGenerating, isMac } = useMessageSuggestionsContext();
+    const modKey = isMac ? "⌘" : "Ctrl";
+    const altKey = isMac ? "⌥" : "Alt";
 
-/**
- * Displays the list of suggestion buttons.
- * Automatically connects to the context to show the suggestions.
- * @component MessageSuggestions.List
- * @example
- * ```tsx
- * <MessageSuggestions>
- *   <MessageSuggestions.Status />
- *   <MessageSuggestions.List />
- * </MessageSuggestions>
- * ```
- */
-const MessageSuggestionsList = React.forwardRef<
-  HTMLDivElement,
-  MessageSuggestionsListProps
->(({ className, ...props }, ref) => {
-  const { suggestions, selectedSuggestionId, accept, isGenerating, isMac } =
-    useMessageSuggestionsContext();
-
-  const modKey = isMac ? "⌘" : "Ctrl";
-  const altKey = isMac ? "⌥" : "Alt";
-
-  // Create placeholder suggestions when there are no real suggestions
-  const placeholders = Array(3).fill(null);
-
-  return (
-    <div
-      ref={ref}
-      className={cn(
-        "flex space-x-2 overflow-x-auto pb-2 rounded-md bg-muted/30 min-h-[2.5rem]",
-        isGenerating ? "opacity-70" : "",
-        className,
-      )}
-      data-slot="message-suggestions-list"
-      {...props}
-    >
-      {suggestions.length > 0
-        ? suggestions.map((suggestion, index) => (
-            <Tooltip
-              key={suggestion.id}
-              content={
-                <span suppressHydrationWarning>
-                  {modKey}+{altKey}+{index + 1}
-                </span>
-              }
-              side="top"
-            >
-              <button
-                className={cn(
-                  "py-2 px-2.5 rounded-2xl text-xs transition-colors",
-                  "border border-flat",
-                  isGenerating
-                    ? "bg-muted/50 text-muted-foreground"
-                    : selectedSuggestionId === suggestion.id
-                      ? "bg-accent text-accent-foreground"
-                      : "bg-background hover:bg-accent hover:text-accent-foreground",
-                )}
-                onClick={async () =>
-                  !isGenerating && (await accept({ suggestion }))
-                }
-                disabled={isGenerating}
-                data-suggestion-id={suggestion.id}
-                data-suggestion-index={index}
-              >
-                <span className="font-medium">{suggestion.title}</span>
-              </button>
-            </Tooltip>
+    return (
+      <div ref={ref} className={cn("flex flex-wrap gap-2 px-4 pb-4", className)} {...props}>
+        {suggestions.length > 0 ? (
+          suggestions.map((suggestion, index) => (
+            <TooltipProvider key={suggestion.id || index}>
+              <Tooltip content={`${modKey}+${altKey}+${index + 1}`} side="top">
+                <button
+                  className={cn(
+                    "rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs transition-all",
+                    "hover:bg-blue-500/20 hover:border-blue-500/40 text-slate-300 hover:text-white",
+                    "disabled:opacity-50 disabled:cursor-not-allowed text-left",
+                    selectedSuggestionId === suggestion.id && "bg-blue-500/30 border-blue-500 text-white shadow-lg"
+                  )}
+                  onClick={async () => !isGenerating && (await accept({ suggestion }))}
+                  disabled={isGenerating}
+                >
+                  <div className="flex items-center gap-1.5">
+                    <Sparkles className="h-3 w-3 text-blue-400" />
+                    <span>{suggestion.title}</span>
+                  </div>
+                </button>
+              </Tooltip>
+            </TooltipProvider>
           ))
-        : // Render placeholder buttons when no suggestions are available
-          placeholders.map((_, index) => (
-            <div
-              key={`placeholder-${index}`}
-              className="py-2 px-2.5 rounded-2xl text-xs border border-flat bg-muted/20 text-transparent animate-pulse"
-              data-placeholder-index={index}
-            >
-              <span className="invisible">Placeholder</span>
-            </div>
-          ))}
-    </div>
-  );
-});
+        ) : (
+          [1, 2, 3].map((i) => (
+            <div key={i} className="h-8 w-28 rounded-full bg-white/5 animate-pulse border border-white/5" />
+          ))
+        )}
+      </div>
+    );
+  }
+);
 MessageSuggestionsList.displayName = "MessageSuggestions.List";
 
 export { MessageSuggestions, MessageSuggestionsStatus, MessageSuggestionsList };
