@@ -26,12 +26,11 @@ SkyObserv Observability with TamboAI Generative UIA modern, AI-powered observabi
 - [Tech Stack](#tech-stack)
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
-- [Configuration](#configuration)
 - [Usage](#usage)
 - [TamboAI Natural Language Queries](#tamboai-natural-language-queries)
 - [Project Structure](#project-structure)
 - [Development](#development)
-- [API Documentation](#api-documentation)
+- [TamboAI Components Reference](#tamboai-components-reference)
 - [Troubleshooting](#troubleshooting)
 
 
