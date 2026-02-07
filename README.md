@@ -3,6 +3,13 @@
 SkyObserv Observability with TamboAI Generative UIA modern, AI-powered observability platform that integrates Apache SkyWalking APM with TamboAI's generative UI capabilities. Ask questions in natural language and get instant visual insights about your services, metrics, traces, and topology.
 
 
+![alt text](./screenshots/image.png)
+![alt text](./screenshots/image1.png)
+![alt text](./screenshots/image2.png)
+![alt text](./screenshots/image3.png)
+![alt text](./screenshots/image4.png)
+![alt text](./screenshots/image5.png)
+![alt text](./screenshots/image6.png)
 ## Features
 
 ### Core APM Features
