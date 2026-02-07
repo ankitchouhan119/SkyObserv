@@ -48,7 +48,7 @@ SkyObserv Observability with TamboAI Generative UIA modern, AI-powered observabi
 │  │  │  - Traces Page   │  │  - MetricsCard           │    │ │
 │  │  │  - Topology Page │  │  - TopologyGraph         │    │ │
 │  │  │  - Database Page │  │  - EndpointsCard         │    │ │
-│  │  │  -               │  │  - InstancesCard         │    │ │
+│  │  │                  │  │  - InstancesCard         │    │ │
 │  │  └──────────────────┘  └──────────────────────────┘    │ │
 │  └────────────────────────────────────────────────────────┘ │
 └──────────────────────┬──────────────────────────────────────┘
@@ -75,7 +75,7 @@ SkyObserv Observability with TamboAI Generative UIA modern, AI-powered observabi
 └────────────────────────────────────────────────────────────┘
 ```
 
-## 🛠 Tech Stack
+## Tech Stack
 
 ### Frontend
 - **React** - UI library
@@ -141,7 +141,7 @@ docker run -d --name skywalking-oap-local \
 
 
 
-### Setting up SkyWalking
+### Setting Demo App to test Observability
 
 ```bash
 # Skywalking Agent Injection
@@ -485,7 +485,10 @@ Lists API endpoints for a service.
 
 2. Check SkyWalking logs:
    ```bash
-   tail -f skywalking/logs/skywalking-oap-server.log
+   docker logs -f skywalking-oap-local
+
+   docker logs --tail 100 skywalking-oap-local
+
    ```
 
 3. Ensure port 12800 is accessible:
