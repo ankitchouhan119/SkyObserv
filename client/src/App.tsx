@@ -32,7 +32,7 @@ function Router() {
 }
 
 function App() {
-  const tamboApiKey = "tambo_cRCbUGmuhRZstWFkDnZ1o/yxzU2J8hifNFyGzPjEeiXB3s2RkgIEVE8VMLpZnjRS0f8z/g7ds0bLETlvZeVtXCfjXf11okDtKY4qgiPw4Ok="
+  const tamboApiKey = "tambo_lslGh0SaGaRcsdgXsSniR6YZihXnPKG/Udnn90lxEIqYJ8gUeP6Sa1t3H22K3ctR250y47gv1Qf/+an3EIzN6eNr/fUMRAtqC3IoFyM7wUo="
 
   return (
     <ApolloProvider client={client}>

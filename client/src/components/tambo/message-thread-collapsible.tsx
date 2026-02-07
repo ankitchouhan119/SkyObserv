@@ -21,7 +21,7 @@ import { ThreadDropdown } from "./thread-dropdown";
 import { ScrollableMessageContainer } from "./scrollable-message-container";
 import { cn } from "@/lib/utils";
 import { Collapsible } from "radix-ui";
-import { XIcon } from "lucide-react";
+import { Activity, XIcon } from "lucide-react";
 import * as React from "react";
 import { type VariantProps } from "class-variance-authority";
 import type { Suggestion } from "@tambo-ai/react";
@@ -211,11 +211,16 @@ const CollapsibleTrigger = ({
     {isOpen && (
       <div className="flex items-center justify-between w-full p-4">
         <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center shadow-lg">
+            {config.icon}
+          </div>
+
           <span>{config.labels.openState}</span>
-          <ThreadDropdown
+
+          {/* <ThreadDropdown
             contextKey={contextKey}
             onThreadChange={onThreadChange}
-          />
+          /> */}
         </div>
         <button
           className="p-1 rounded-full hover:bg-muted/70 transition-colors cursor-pointer"
@@ -248,9 +253,10 @@ export const MessageThreadCollapsible = React.forwardRef<
    */
   const THREAD_CONFIG = {
     labels: {
-      openState: "Conversations",
+      openState: "SkyObserv",
       closedState: "Start chatting with SkyObserv",
     },
+    icon: <Activity className="h-5 w-5 text-white" />
   };
 
   const defaultSuggestions: Suggestion[] = [

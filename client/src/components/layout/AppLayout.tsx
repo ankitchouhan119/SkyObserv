@@ -107,7 +107,7 @@ React.useEffect(() => {
     
     const istTime = `${istYear}-${istMonth}-${istDay} ${istHours}:${istMinutes}:${istSeconds}`;
 
-    console.log('Current Time:', { IST: istTime, UTC: utcTime });
+    // console.log('Current Time:', { IST: istTime, UTC: utcTime });
 
     // Replace placeholders
     let dynamicPrompt = TAMBO_SYSTEM_PROMPT

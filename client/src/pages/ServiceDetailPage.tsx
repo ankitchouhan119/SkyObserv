@@ -33,7 +33,7 @@ export default function ServiceDetailPage() {
   
   const endpoints = endpointsData?.endpoints || [];
   const instances = instancesData?.getServiceInstances || [];
-  const serviceName = serviceId ? atob(serviceId.split('.')[0]) : 'new4';
+  const serviceName = serviceId ? atob(serviceId.split('.')[0]) : [];
 
   const { addContextHelper, removeContextHelper } = useTamboContextHelpers();
 
@@ -62,7 +62,7 @@ export default function ServiceDetailPage() {
         metrics: { latency: curLat, throughput: curThr, sla: curSLA },
         status: curSLA < 95 ? "critical" : "healthy",
         viewing: "Service Detail Page",
-        instruction: "Use ServiceMetricsCard to show these values in Hinglish."
+        instruction: "Use ServiceMetricsCard to show these values in English."
       }));
     }
     return () => removeContextHelper("current_service");
@@ -79,7 +79,7 @@ export default function ServiceDetailPage() {
               <Badge variant="outline" className="text-primary border-primary/20 bg-primary/5"><Server className="w-3 h-3 mr-1" /> Service</Badge>
             </div>
           </div>
-          <Button variant="outline" size="sm" className="bg-card/50 border-white/10 text-white"><RefreshCw className="w-3.5 h-3.5 mr-2" /> Refresh</Button>
+          {/* <Button variant="outline" size="sm" className="bg-card/50 border-white/10 text-white"><RefreshCw className="w-3.5 h-3.5 mr-2" /> Refresh</Button> */}
         </div>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">

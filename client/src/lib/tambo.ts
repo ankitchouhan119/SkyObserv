@@ -31,7 +31,7 @@ const serviceMetricsSchema = z.object({
   throughput: z.number().describe("Throughput in calls per minute"),
   sla: z.number().describe("SLA/Success rate percentage (0-100)"),
   status: z.enum(["healthy", "degraded", "critical"]).optional().describe("Current health status"),
-  insight: z.string().optional().describe("A short Hinglish analysis of the service health"),
+  insight: z.string().optional().describe("A short  analysis of the service health"),
 });
 
 const serviceListSchema = z.object({
@@ -42,6 +42,7 @@ const serviceListSchema = z.object({
       shortName: z.string().optional(),
       group: z.string().optional(),
       status: z.string().optional(),
+      normalStatus: z.string(), 
     })
   ).describe("Array of all discovered services"),
 });
@@ -68,10 +69,60 @@ const tracesListSchema = z.object({
   ).describe("List of distributed traces"),
 });
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// const topologyGraphSchema = z.object({
+//   nodes: z.array(z.object({ id: z.string(), name: z.string(), type: z.string() })),
+//   calls: z.array(z.object({ id: z.string(), source: z.string(), target: z.string() })),
+// });
+
+
+
+// tambo.ts ke andar topologyGraphSchema ko isse replace karo:
+
 const topologyGraphSchema = z.object({
-  nodes: z.array(z.object({ id: z.string(), name: z.string(), type: z.string() })),
-  calls: z.array(z.object({ id: z.string(), source: z.string(), target: z.string() })),
+  nodes: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string().optional().nullable(),
+      type: z.string().optional().nullable(),
+      isReal: z.boolean().optional().nullable(),
+    })
+  ).optional().describe("List of topology nodes"),
+  calls: z.array(
+    z.object({
+      id: z.string().optional().nullable(),
+      source: z.string().optional().nullable(),
+      target: z.string().optional().nullable(),
+    })
+  ).optional().describe("List of service calls/edges"),
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 const serviceInstancesSchema = z.object({
   serviceName: z.string().optional(),

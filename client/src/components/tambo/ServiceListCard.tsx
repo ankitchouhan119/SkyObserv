@@ -1,73 +1,63 @@
-import { Card } from "@/components/ui/card";
-import { Server, Activity, Layers, AlertCircle } from "lucide-react";
+"use client";
 
+import { Card } from "@/components/ui/card";
+import { Server, Activity, AlertCircle } from "lucide-react";
 
 export function ServiceListCard(props: any) {
-
   const data = props.args || props;
-  
-
   const services = data.services || [];
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <Server className="w-5 h-5 text-primary" />
-
-        <h3 className="text-lg font-semibold">Services ({services.length})</h3>
+      <div className="flex items-center gap-2 px-1">
+        <Server className="w-4 h-4 text-primary" />
+        <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+          Services Detected ({services.length})
+        </h3>
       </div>
       
       <div className="grid gap-3">
-        {services.map((service: any) => (
-          <Card
-            key={service.id}
-            className="p-4 bg-card/40 border-white/10 hover:bg-card/60 transition-colors"
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <Activity className="w-4 h-4 text-primary" />
-                  <h4 className="font-medium">{service.shortName || service.name}</h4>
+        {services.map((service: any, idx: number) => {
+          
+          const displayStatus = service.normalStatus || "UNKNOWN"; 
+          
+          let dotColor = "bg-gray-500";
+          let textColor = "text-gray-500";
+
+          if (displayStatus === "NORMAL") {
+            dotColor = "bg-green-400 shadow-[0_0_8px_#4ade80]";
+            textColor = "text-green-400";
+          } else if (displayStatus === "ABNORMAL") {
+            dotColor = "bg-red-400 shadow-[0_0_8px_#f87171]";
+            textColor = "text-red-400";
+          }
+          
+
+          return (
+            <Card key={service.id || idx} className="p-4 bg-card/40 border-white/5 hover:bg-card/60 transition-all">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Activity className="w-4 h-4 text-primary" />
+                    <h4 className="font-semibold text-slate-100 truncate">
+                      {service.shortName || service.name}
+                    </h4>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground opacity-50 italic">ID: {service.id}</p>
                 </div>
                 
-                {service.group && (
-                  <p className="text-xs text-muted-foreground mb-2">
-                    Group: {service.group}
-                  </p>
-                )}
-                
-
-                {service.layers && service.layers.length > 0 && (
-                  <div className="flex items-center gap-2 text-xs">
-                    <Layers className="w-3 h-3" />
-                    <span className="text-muted-foreground">
-                      {service.layers.join(", ")}
+                <div className="flex flex-col items-end gap-1.5">
+                  <div className="flex items-center gap-2 px-2 py-1 bg-white/5 rounded border border-white/5">
+                    <div className={`w-2 h-2 rounded-full ${dotColor}`} />
+                    <span className={`text-[10px] font-bold ${textColor}`}>
+                      {displayStatus}
                     </span>
                   </div>
-                )}
+                </div>
               </div>
-              
-              <div className="flex items-center gap-1.5">
-                <div
-                  className={`w-2 h-2 rounded-full ${
-                    service.normal ? "bg-green-400 shadow-[0_0_8px_#4ade80]" : "bg-red-400 shadow-[0_0_8px_#f87171]"
-                  }`}
-                />
-                <span className="text-xs text-muted-foreground">
-                  {service.normal ? "Normal" : "Abnormal"}
-                </span>
-              </div>
-            </div>
-          </Card>
-        ))}
-
-         {/* Empty state handles no data gracefully  */}
-        {services.length === 0 && (
-          <Card className="p-8 text-center border-dashed bg-card/10 border-white/10">
-            <AlertCircle className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-            <p className="text-sm text-muted-foreground">No services detected in the current view.</p>
-          </Card>
-        )}
+            </Card>
+          );
+        })}
       </div>
     </div>
   );

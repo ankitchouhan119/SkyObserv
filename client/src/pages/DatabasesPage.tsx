@@ -64,9 +64,6 @@ export default function DatabasesPage() {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <button onClick={() => refetch()} className="p-2 hover:bg-white/5 rounded-lg border border-white/10 transition-colors">
-              <RefreshCw className={`w-4 h-4 text-primary ${loading ? 'animate-spin' : ''}`} />
-            </button>
           </div>
         </div>
 

@@ -1,116 +1,111 @@
 "use client";
 
 import { Card } from "@/components/ui/card";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useMemo } from "react";
 import ForceGraph2D from "react-force-graph-2d";
+import { Activity, Share2 } from "lucide-react";
 
-type Node = {
-  id: string;
-  name: string;
-  type: string;
-  isReal: boolean;
-  layers?: string[];
-};
-
-type Call = {
-  id: string;
-  source: string;
-  target: string;
-  detectPoints?: string[];
-};
-
-type Props = {
-  nodes?: Node[]; 
-  calls?: Call[]; 
-};
-
-export function TopologyGraphCard({ nodes = [], calls = [] }: Props) {
+export function TopologyGraphCard(props: any) {
   const graphRef = useRef<any>();
 
-  // Added nullish coalescing (?? []) to prevent .map() on undefined
-  const graphData = {
-    nodes: (nodes ?? []).map((node) => ({
-      id: node.id,
-      name: node.name,
-      type: node.type,
-      isReal: node.isReal,
-      color: node.isReal ? "#3b82f6" : "#6b7280",
-    })),
-    links: (calls ?? []).map((call) => ({
-      source: call.source,
-      target: call.target,
-      id: call.id,
-    })),
-  };
+  const data = props.args || props; 
+  const nodes = data.nodes || [];
+  const calls = data.calls || [];
 
-  useEffect(() => {
-    if (graphRef.current) {
-      graphRef.current.d3Force("charge").strength(-400);
-      graphRef.current.d3Force("link").distance(100);
-    }
-  }, []);
+  const graphData = useMemo(() => {
+    // Create a Set of valid node IDs for validation
+    const validNodeIds = new Set(nodes.map((n: any) => String(n.id)));
+    
+    
+    // Process each call and show what's happening
+    const validLinks = calls.map((c: any, index: number) => {
+      const sourceId = String(typeof c.source === 'object' ? c.source.id : c.source);
+      const targetId = String(typeof c.target === 'object' ? c.target.id : c.target);
+      
+      return {
+        source: sourceId,
+        target: targetId,
+      };
+    }).filter((link: any) => {
+      const isValid = validNodeIds.has(link.source) && validNodeIds.has(link.target);
+      if (!isValid) {
+        console.warn(`Filtered out invalid link:`, link);
+      }
+      return isValid;
+    });
+    
+
+    return {
+      nodes: nodes.map((n: any) => ({
+        id: String(n.id),
+        name: n.name || "Unknown",
+        isReal: n.isReal,
+        color: n.isReal ? "#3b82f6" : "#64748b",
+      })),
+      links: validLinks,
+    };
+  }, [nodes, calls]);
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-white">Service Topology</h3>
-        <div className="text-sm text-muted-foreground">
-          {nodes?.length ?? 0} services, {calls?.length ?? 0} connections
+      <div className="flex items-center justify-between px-1">
+        <div className="flex items-center gap-2">
+          <Share2 className="w-4 h-4 text-primary" />
+          <h3 className="text-sm font-bold text-white uppercase tracking-wider">Dependency Graph</h3>
+        </div>
+        <div className="text-[10px] text-muted-foreground bg-white/5 px-2 py-1 rounded">
+          {graphData.nodes.length} Nodes | {graphData.links.length} Links
         </div>
       </div>
 
-      <Card className="p-4 bg-card/40 border-white/10">
-        <div className="w-full h-[400px] bg-black/20 rounded-lg overflow-hidden relative">
-          {/* Safety check for empty graph */}
-          {graphData.nodes.length > 0 ? (
-            <ForceGraph2D
-              ref={graphRef}
+      <Card className="bg-[#0a0a0a]/90 border-white/5 overflow-hidden rounded-xl h-[400px] relative">
+        {graphData.nodes.length > 0 ? (
+          <ForceGraph2D
               graphData={graphData}
               nodeLabel="name"
-              nodeColor={(node: any) => node.color}
-              nodeRelSize={8}
-              linkColor={() => "#444"}
-              linkWidth={2}
-              linkDirectionalArrowLength={6}
-              linkDirectionalArrowRelPos={1}
-              backgroundColor="#0a0a0a"
-              nodeCanvasObject={(node: any, ctx: any, globalScale: number) => {
-                const label = node.name || 'Unknown';
-                const fontSize = 12 / globalScale;
-                ctx.font = `${fontSize}px Sans-Serif`;
+              nodeRelSize={6}
+              linkColor={() => 'rgba(255, 255, 255, 0.15)'}
+              linkDirectionalParticles={3}
+              linkDirectionalParticleSpeed={0.005}
+              linkDirectionalParticleWidth={2}
+              backgroundColor="transparent"
+              width={500}
+              height={400}
+              onNodeClick={(node) => console.log('Selected Service:', node.name)}
+              nodeCanvasObject={(node: any, ctx, globalScale) => {
+                const label = node.name;
+                const fontSize = 13 / globalScale;
+                ctx.font = `${fontSize}px Inter, Sans-Serif`;
                 
+                // Draw Node Circle
                 ctx.beginPath();
-                ctx.arc(node.x, node.y, 6, 0, 2 * Math.PI);
+                ctx.arc(node.x, node.y, 5, 0, 2 * Math.PI, false);
                 ctx.fillStyle = node.color;
                 ctx.fill();
-                ctx.strokeStyle = node.isReal ? "#60a5fa" : "#9ca3af";
-                ctx.lineWidth = 2 / globalScale;
-                ctx.stroke();
+                
+                // Draw Node Glow
+                if (node.isReal) {
+                  ctx.shadowColor = '#3b82f6';
+                  ctx.shadowBlur = 10;
+                }
 
-                ctx.textAlign = "center";
-                ctx.textBaseline = "middle";
-                ctx.fillStyle = "#fff";
+                // Draw Text Label
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = '#ffffff';
                 ctx.fillText(label, node.x, node.y + 12);
+                
+                // Reset shadow
+                ctx.shadowBlur = 0;
               }}
             />
-          ) : (
-            <div className="absolute inset-0 flex items-center justify-center text-muted-foreground text-sm">
-              No topology data available for the selected duration
-            </div>
-          )}
-        </div>
+        ) : (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground text-xs p-4 text-center">
+            <Activity className="w-6 h-6 opacity-20 animate-pulse" />
+            No data synced to card yet. Check Tool console logs.
+          </div>
+        )}
       </Card>
-
-      <div className="flex items-center gap-6 text-xs">
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-blue-500" />
-          <span className="text-muted-foreground">Real Service</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-gray-500" />
-          <span className="text-muted-foreground">Virtual/External</span>
-        </div>
-      </div>
     </div>
   );
 }

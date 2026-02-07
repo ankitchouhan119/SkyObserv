@@ -40,6 +40,7 @@ export default function TopologyPage() {
     return { nodes, links };
   }, [data]);
 
+
   useEffect(() => {
     const handleAutoUpdate = (e: any) => {
       const { filters } = e.detail;
@@ -75,14 +76,14 @@ export default function TopologyPage() {
             </div>
             <p className="text-muted-foreground text-sm">Visualizing service dependencies and traffic flow</p>
           </div>
-          <button 
+          {/* <button 
             onClick={() => refetch()} 
             className="flex items-center gap-2 px-3 py-2 bg-white/5 hover:bg-white/10 rounded-lg border border-white/10 transition-all"
             title="Refresh Topology"
           >
             <RefreshCw className={`w-4 h-4 text-primary ${loading ? 'animate-spin' : ''}`} />
             <span className="text-xs font-medium text-white">Refresh</span>
-          </button>
+          </button> */}
         </div>
 
         {/* Graph Container */}

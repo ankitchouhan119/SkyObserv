@@ -99,7 +99,7 @@ export default function TraceDetailPage() {
                       <div 
                         className={`
                           absolute h-5 rounded-md text-[10px] flex items-center px-2 text-white/90 whitespace-nowrap overflow-visible shadow-sm
-                          ${span.isError ? 'bg-red-500/80' : isDb ? 'bg-orange-500/70' : 'bg-primary/70'}
+                          ${span.isError ? 'bg-red-500/80' : isDb ? 'bg-orange-500/70' : 'bg-green-500/70'}
                         `}
                         style={{ left: `${leftPct}%`, width: `${widthPct}%` }}
                       >

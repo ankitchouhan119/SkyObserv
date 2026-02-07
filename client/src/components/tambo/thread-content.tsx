@@ -13,10 +13,6 @@ import * as React from "react";
 
 /**
  * @typedef ThreadContentContextValue
- * @property {Array} messages - Array of message objects in the thread
- * @property {boolean} isGenerating - Whether a response is being generated
- * @property {string|undefined} generationStage - Current generation stage
- * @property {VariantProps<typeof messageVariants>["variant"]} [variant] - Optional styling variant for messages
  */
 interface ThreadContentContextValue {
   messages: TamboThreadMessage[];
@@ -25,19 +21,9 @@ interface ThreadContentContextValue {
   variant?: VariantProps<typeof messageVariants>["variant"];
 }
 
-/**
- * React Context for sharing thread data among sub-components.
- * @internal
- */
 const ThreadContentContext =
   React.createContext<ThreadContentContextValue | null>(null);
 
-/**
- * Hook to access the thread content context.
- * @returns {ThreadContentContextValue} The thread content context value.
- * @throws {Error} If used outside of ThreadContent.
- * @internal
- */
 const useThreadContentContext = () => {
   const context = React.useContext(ThreadContentContext);
   if (!context) {
@@ -48,29 +34,12 @@ const useThreadContentContext = () => {
   return context;
 };
 
-/**
- * Props for the ThreadContent component.
- * Extends standard HTMLDivElement attributes.
- */
 export interface ThreadContentProps
   extends React.HTMLAttributes<HTMLDivElement> {
-  /** Optional styling variant for the message container */
   variant?: VariantProps<typeof messageVariants>["variant"];
-  /** The child elements to render within the container. */
   children?: React.ReactNode;
 }
 
-/**
- * The root container for thread content.
- * It establishes the context for its children using data from the Tambo hook.
- * @component ThreadContent
- * @example
- * ```tsx
- * <ThreadContent variant="solid">
- *   <ThreadContent.Messages />
- * </ThreadContent>
- * ```
- */
 const ThreadContent = React.forwardRef<HTMLDivElement, ThreadContentProps>(
   ({ children, className, variant, ...props }, ref) => {
     const { thread, generationStage, isIdle } = useTambo();
@@ -102,28 +71,17 @@ const ThreadContent = React.forwardRef<HTMLDivElement, ThreadContentProps>(
 );
 ThreadContent.displayName = "ThreadContent";
 
-/**
- * Props for the ThreadContentMessages component.
- * Extends standard HTMLDivElement attributes.
- */
 export type ThreadContentMessagesProps = React.HTMLAttributes<HTMLDivElement>;
 
-/**
- * Renders the list of messages in the thread.
- * Automatically connects to the context to display messages.
- * @component ThreadContent.Messages
- * @example
- * ```tsx
- * <ThreadContent>
- *   <ThreadContent.Messages />
- * </ThreadContent>
- * ```
- */
 const ThreadContentMessages = React.forwardRef<
   HTMLDivElement,
   ThreadContentMessagesProps
 >(({ className, ...props }, ref) => {
   const { messages, isGenerating, variant } = useThreadContentContext();
+
+  const visibleMessages = React.useMemo(() => {
+    return messages.filter((m) => m.role === "user" || m.role === "assistant");
+  }, [messages]);
 
   return (
     <div
@@ -132,37 +90,40 @@ const ThreadContentMessages = React.forwardRef<
       data-slot="thread-content-messages"
       {...props}
     >
-      {messages.map((message, index) => {
+      {visibleMessages.map((message, index) => {
+        const isAssistant = message.role === "assistant";
+        const isLastMessage = index === visibleMessages.length - 1;
+
         return (
           <div
             key={
               message.id ??
               `${message.role}-${
                 message.createdAt ?? Date.now()
-              }-${message.content?.toString().substring(0, 10)}`
+              }-${index}`
             }
             data-slot="thread-content-item"
           >
             <Message
-              role={message.role === "assistant" ? "assistant" : "user"}
+              role={isAssistant ? "assistant" : "user"}
               message={message}
               variant={variant}
-              isLoading={isGenerating && index === messages.length - 1}
+              // Spinner only shows on the last visible message while generating
+              isLoading={isGenerating && isLastMessage}
               className={cn(
                 "flex w-full",
-                message.role === "assistant" ? "justify-start" : "justify-end",
+                isAssistant ? "justify-start" : "justify-end",
               )}
             >
               <div
                 className={cn(
                   "flex flex-col",
-                  message.role === "assistant" ? "w-full" : "max-w-3xl",
+                  isAssistant ? "w-full" : "max-w-3xl",
                 )}
               >
-
-                  <MessageContent
+                <MessageContent
                   className={
-                    message.role === "assistant"
+                    isAssistant
                       ? "text-white border border-gray-500/20 bg-gray-600/20 to-transparent font-sans"
                       : "text-white border border-green-500/20 bg-green-600/20 to-transparent hover:bg-backdrop font-sans"
                   }

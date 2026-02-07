@@ -1,30 +1,31 @@
 import { z } from "zod";
 import { client } from "@/apollo/client";
-import { 
-  GET_ALL_SERVICES, 
+import {
+  GET_ALL_SERVICES,
   GET_ALL_DATABASES,
   GET_SERVICE_INSTANCES,
   GET_SERVICE_ENDPOINTS,
 } from "@/apollo/queries/services";
 import { GET_SERVICE_METRICS } from "@/apollo/queries/metrics";
 import { GET_TRACES } from "@/apollo/queries/traces";
-import { GET_TOPOLOGY } from "@/apollo/queries/topology";
 import { toJsonSchema } from "./json-schema";
 import { defineTool } from "@tambo-ai/react";
+import { GET_GLOBAL_TOPOLOGY } from "@/apollo/queries/topology";
+
 
 
 const parseToSkywalkingFormat = (dateStr: string) => {
   if (!dateStr) return dateStr;
-  
+
   // Remove any non-numeric characters except space and keep only the core parts
   // Handles: "2026-02-07 1430", "07-02-2026 14:30", etc.
-  let cleaned = dateStr.replace(/[:/-]/g, '-'); 
-  
+  let cleaned = dateStr.replace(/[:/-]/g, '-');
+
   if (cleaned.includes("-") && cleaned.split("-")[0].length === 2) {
-     const parts = cleaned.split(" ");
-     const [d, m, y] = parts[0].split("-");
-     const time = parts[1] ? parts[1].replace(/-/g, "") : "0000";
-     return `${y}-${m}-${d} ${time}`;
+    const parts = cleaned.split(" ");
+    const [d, m, y] = parts[0].split("-");
+    const time = parts[1] ? parts[1].replace(/-/g, "") : "0000";
+    return `${y}-${m}-${d} ${time}`;
   }
   return dateStr.replace(/-/g, '-'); // Ensure YYYY-MM-DD format
 };
@@ -40,10 +41,10 @@ const formatSkywalkingTime = (date: Date) => {
 
 const getDynamicDuration = (startDate?: string, endDate?: string) => {
   if (startDate && endDate) {
-    return { 
-      start: parseToSkywalkingFormat(startDate), 
-      end: parseToSkywalkingFormat(endDate), 
-      step: "MINUTE" as const 
+    return {
+      start: parseToSkywalkingFormat(startDate),
+      end: parseToSkywalkingFormat(endDate),
+      step: "MINUTE" as const
     };
   }
   const end = new Date();
@@ -56,27 +57,57 @@ const getDynamicDuration = (startDate?: string, endDate?: string) => {
 };
 
 
-/**
- * 1. Tool: getServices
- */
 export const getServicesTool = defineTool({
   name: "getServices",
   description: "INTERNAL: Fetch services for ServiceListCard.",
   inputSchema: toJsonSchema(z.object({})),
-  outputSchema: toJsonSchema(z.object({ services: z.array(z.any()) })),
+  outputSchema: toJsonSchema(z.object({ 
+    services: z.array(z.object({
+      id: z.string(),
+      name: z.string(),
+      shortName: z.string().optional().nullable(),
+      group: z.string().optional().nullable(),
+      layers: z.array(z.string()).optional().nullable(),
+      normalStatus: z.string(), // ← CHANGED: boolean to string
+      status: z.any().optional().nullable(),
+    })) 
+  })),
   tool: async () => {
     try {
+      const duration = getDynamicDuration();
       const { data } = await client.query({
         query: GET_ALL_SERVICES,
-        variables: { duration: getDynamicDuration() },
+        variables: { duration },
         fetchPolicy: "network-only",
       });
-      return { services: data?.getAllServices || [] };
+
+      const raw = data?.getAllServices || [];
+      
+      
+      const mappedServices = raw.map((s: any) => {
+
+        const item = {
+          id: String(s.id),
+          name: String(s.name),
+          shortName: s.shortName || s.name,
+          group: s.group || "",
+          layers: s.layers || [],
+          normalStatus: s.normal === true ? "NORMAL" : s.normal === false ? "ABNORMAL" : "UNKNOWN", // ← CHANGED
+          status: s.status || null
+        };
+        
+        
+        return item;
+      });
+
+      return { services: mappedServices };
     } catch (error) {
       return { services: [] };
     }
   },
 });
+
+
 
 /**
  * 2. Tool: getServiceMetrics
@@ -89,7 +120,7 @@ export const getServiceMetricsTool = defineTool({
     startDate: z.string().optional().describe("Start date: 'YYYY-MM-DD HHmm' or 'DD-MM-YYYY'"),
     endDate: z.string().optional().describe("End date: 'YYYY-MM-DD HHmm' or 'DD-MM-YYYY'"),
   })),
-  outputSchema: toJsonSchema(z.object({ 
+  outputSchema: toJsonSchema(z.object({
     serviceName: z.string(),
     latency: z.number(),
     throughput: z.number(),
@@ -158,28 +189,68 @@ export const getTracesTool = defineTool({
   },
 });
 
-/**
- * 4. Tool: getTopology
- */
+
+
 export const getTopologyTool = defineTool({
   name: "getTopology",
-  description: "INTERNAL: Fetch topology nodes and calls.",
-  inputSchema: toJsonSchema(z.object({})),
-  outputSchema: toJsonSchema(z.object({ nodes: z.array(z.any()), calls: z.array(z.any()) })),
-  tool: async () => {
+  description: "INTERNAL: Fetch global topology nodes and calls.",
+  inputSchema: toJsonSchema(z.object({
+    startDate: z.string().optional(),
+    endDate: z.string().optional(),
+  })),
+  outputSchema: toJsonSchema(z.object({ 
+    nodes: z.array(z.object({
+      id: z.string(),
+      name: z.string(),
+      type: z.string().optional(),
+      isReal: z.boolean().optional(),
+      layers: z.array(z.string()).optional(),
+    })), 
+    calls: z.array(z.object({
+      id: z.string(),
+      source: z.string(),
+      target: z.string(),
+      detectPoints: z.array(z.string()).optional(),
+    }))
+  })),
+  tool: async ({ startDate, endDate }) => {
     try {
+      const duration = getDynamicDuration(startDate, endDate);
+
       const { data } = await client.query({
-        query: GET_TOPOLOGY,
-        variables: { serviceIds: [], duration: getDynamicDuration() },
+        query: GET_GLOBAL_TOPOLOGY, 
+        variables: { duration },
         fetchPolicy: "network-only",
       });
-      const topo = data?.getServicesTopology || { nodes: [], calls: [] };
-      return { nodes: topo.nodes || [], calls: topo.calls || [] };
+
+      const rawData = data?.getGlobalTopology;
+
+      const nodes = (rawData?.nodes || []).map((n: any) => ({
+        id: String(n.id),
+        name: String(n.name),
+        type: n.type || "service",
+        isReal: n.isReal ?? true,
+        layers: n.layers || [],
+      }));
+
+      const calls = (rawData?.calls || []).map((c: any) => ({
+        id: String(c.id),
+        source: String(c.source),
+        target: String(c.target),
+        detectPoints: c.detectPoints || [],
+      }));
+
+      return { nodes, calls };
     } catch (error) {
+      console.error("TOPOLOGY TOOL ERROR:", error);
       return { nodes: [], calls: [] };
     }
   },
 });
+
+
+
+
 
 /**
  * 5. Tool: getDatabases
@@ -222,18 +293,18 @@ export const navigateTool = defineTool({
   tool: async ({ path, filters }) => {
     // 1. First trigger Navigation 
     window.dispatchEvent(new CustomEvent("tambo:navigate", { detail: { path, filters } }));
-    
+
     if (filters) {
       setTimeout(() => {
         window.dispatchEvent(new CustomEvent("skyobserv:query-update", { detail: { filters } }));
       }, 500);
     }
-    
+
     return { success: true };
   },
 });
 
-/** 5. Fetch Service Endpoints */
+// /** 5. Fetch Service Endpoints */
 export const getEndpointsTool = defineTool({
   name: "getEndpoints",
   description: "INTERNAL: Fetch API endpoints for a specific service.",
@@ -243,6 +314,7 @@ export const getEndpointsTool = defineTool({
   outputSchema: toJsonSchema(z.object({ endpoints: z.array(z.any()) })),
   tool: async ({ serviceId }) => {
     try {
+      console.log(`AI fetching endpoints for ServiceID: ${serviceId}`);
       const { data } = await client.query({
         query: GET_SERVICE_ENDPOINTS,
         variables: { serviceId, keyword: '' },
@@ -253,7 +325,9 @@ export const getEndpointsTool = defineTool({
 
       const formattedEndpoints = rawData.map((e: any) => ({
         id: e.id,
-        name: e.name || "Unknown Path" 
+        name: e.name,             // Primary (Matches your UI table)
+        endpointPath: e.name,     // Backup 1
+        label: e.name             // Backup 2
       }));
 
       return { endpoints: formattedEndpoints };
@@ -263,6 +337,8 @@ export const getEndpointsTool = defineTool({
     }
   },
 });
+
+
 
 /** 6. Fetch Service Instances */
 export const getInstancesTool = defineTool({
