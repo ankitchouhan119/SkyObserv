@@ -18,10 +18,10 @@ export function AppLayout({ children }: AppLayoutProps) {
   const { addContextHelper, removeContextHelper } = useTamboContextHelpers();
 
   // AI Navigation & Filter Sync Bridge
-React.useEffect(() => {
+  React.useEffect(() => {
     const handleNavigation = (e: any) => {
       const { path, filters } = e.detail || {};
-      
+
       if (path) {
         setLocation(path);
       }
@@ -29,8 +29,8 @@ React.useEffect(() => {
       // if navigation has filter, then wait and re-send
       if (filters) {
         setTimeout(() => {
-          window.dispatchEvent(new CustomEvent("skyobserv:query-update", { 
-            detail: { filters } 
+          window.dispatchEvent(new CustomEvent("skyobserv:query-update", {
+            detail: { filters }
           }));
         }, 600);
       }
@@ -43,18 +43,18 @@ React.useEffect(() => {
   // AI Global Context Bridge with LIVE TIME
   React.useEffect(() => {
     const helperId = "global_observability";
-    
+
     const updateContext = () => {
       const now = new Date();
       const pad = (n: number) => String(n).padStart(2, '0');
-      
+
       // UTC Time
       const utcTime = `${now.getUTCFullYear()}-${pad(now.getUTCMonth() + 1)}-${pad(now.getUTCDate())} ${pad(now.getUTCHours())}:${pad(now.getUTCMinutes())}:${pad(now.getUTCSeconds())}`;
-      
+
       // IST Time (UTC + 5:30)
       const istDate = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
       const istTime = `${istDate.getUTCFullYear()}-${pad(istDate.getUTCMonth() + 1)}-${pad(istDate.getUTCDate())} ${pad(istDate.getUTCHours())}:${pad(istDate.getUTCMinutes())}:${pad(istDate.getUTCSeconds())}`;
-      
+
       addContextHelper(helperId, () => ({
         currentPath: location,
         appName: "SkyObserv",
@@ -64,10 +64,10 @@ React.useEffect(() => {
         instruction: `Current IST: ${istTime}, UTC: ${utcTime}. User is on ${location}.`
       }));
     };
-    
+
     updateContext();
     const interval = setInterval(updateContext, 60000);
-    
+
     return () => {
       clearInterval(interval);
       removeContextHelper(helperId);
@@ -93,7 +93,7 @@ React.useEffect(() => {
     const utcHours = pad(now.getUTCHours());
     const utcMinutes = pad(now.getUTCMinutes());
     const utcSeconds = pad(now.getUTCSeconds());
-    
+
     const utcTime = `${utcYear}-${utcMonth}-${utcDate} ${utcHours}:${utcMinutes}:${utcSeconds}`;
 
     // IST Time (UTC + 5:30)
@@ -104,7 +104,7 @@ React.useEffect(() => {
     const istHours = pad(istDate.getUTCHours());
     const istMinutes = pad(istDate.getUTCMinutes());
     const istSeconds = pad(istDate.getUTCSeconds());
-    
+
     const istTime = `${istYear}-${istMonth}-${istDay} ${istHours}:${istMinutes}:${istSeconds}`;
 
     // console.log('Current Time:', { IST: istTime, UTC: utcTime });
@@ -132,7 +132,7 @@ ${dynamicPrompt}`;
     const interval = setInterval(() => {
       setDynamicPrompt(getDynamicPrompt());
     }, 30000);
-    
+
     return () => clearInterval(interval);
   }, []);
 
@@ -141,11 +141,15 @@ ${dynamicPrompt}`;
       <div className="min-h-screen bg-[#0a0a0a] text-foreground flex flex-col md:flex-row font-sans">
         {/* Sidebar */}
         <aside className="w-full md:w-64 border-r border-white/5 bg-card/50 flex-shrink-0 flex flex-col h-screen sticky top-0 z-20">
-          <div className="p-6 border-b border-white/5 flex items-center gap-3">
-            <div className="w-8 h-8 rounded bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center shadow-lg">
-              <Activity className="h-5 w-5 text-white" />
-            </div>
-            <span className="font-bold text-lg tracking-tight text-white">SkyObserv</span>
+          <div className="p-6 border-b border-white/5 cursor-pointer">
+            <Link href="/" className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center shadow-lg flex-shrink-0">
+                <Activity className="h-5 w-5 text-white" />
+              </div>
+              <span className="font-bold text-lg tracking-tight text-white">
+                SkyObserv
+              </span>
+            </Link>
           </div>
 
           <nav className="flex-1 p-4 space-y-1">
@@ -155,8 +159,8 @@ ${dynamicPrompt}`;
               return (
                 <Link key={item.href} href={item.href} className={`
                   flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
-                  ${isActive 
-                    ? 'bg-primary/10 text-primary shadow-[0_0_20px_-5px_rgba(var(--primary-rgb),0.3)]' 
+                  ${isActive
+                    ? 'bg-primary/10 text-primary shadow-[0_0_20px_-5px_rgba(var(--primary-rgb),0.3)]'
                     : 'text-muted-foreground hover:bg-white/5 hover:text-foreground'}
                 `}>
                   <Icon className={`w-4 h-4 ${isActive ? 'text-primary' : 'text-muted-foreground'}`} />
@@ -166,11 +170,13 @@ ${dynamicPrompt}`;
             })}
           </nav>
 
-          <div className="p-4 border-t border-white/5">
-            <div className="flex items-center gap-3 px-3 py-2 text-[10px] text-muted-foreground font-mono tracking-widest">
-              <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_#22c55e] animate-pulse" />
-              SkyObserv Observability
-            </div>
+          <div className="p-4 border-t border-white/5 cursor-pointer">
+            <Link href="/">
+              <div className="flex items-center gap-3 px-3 py-2 text-[10px] text-muted-foreground font-mono tracking-widest cursor-pointer hover:text-white transition-colors group">
+                <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_#22c55e] animate-pulse group-hover:scale-110 transition-transform" />
+                SkyObserv Observability
+              </div>
+            </Link>
           </div>
         </aside>
 
