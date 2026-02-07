@@ -4,6 +4,7 @@ SkyObserv Observability with TamboAI Generative UIA modern, AI-powered observabi
 
 
 ![alt text](./screenshots/image.png)
+![alt text](./screenshots/image7.png)
 ![alt text](./screenshots/image1.png)
 ![alt text](./screenshots/image2.png)
 ![alt text](./screenshots/image3.png)
