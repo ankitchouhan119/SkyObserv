@@ -15,6 +15,7 @@ import EndpointDetailPage from "./pages/EndpointDetailPage";
 
 import { components, tools } from "@/lib/tambo";
 import DatabasesPage from "./pages/DatabasesPage";
+// import "dotenv/config"
 
 function Router() {
   return (
@@ -32,8 +33,9 @@ function Router() {
 }
 
 function App() {
-  const tamboApiKey = "tambo_lslGh0SaGaRcsdgXsSniR6YZihXnPKG/Udnn90lxEIqYJ8gUeP6Sa1t3H22K3ctR250y47gv1Qf/+an3EIzN6eNr/fUMRAtqC3IoFyM7wUo="
 
+  const tamboApiKey = import.meta.env.VITE_TAMBO_API_KEY
+  
   return (
     <ApolloProvider client={client}>
       <TamboProvider

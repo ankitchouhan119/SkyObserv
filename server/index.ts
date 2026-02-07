@@ -1,103 +1,72 @@
 import express, { type Request, Response, NextFunction } from "express";
-import { registerRoutes } from "./routes";
-import { serveStatic } from "./static";
 import { createServer } from "http";
+import { api } from "@shared/routes";
+import "dotenv/config"
 
 const app = express();
-const httpServer = createServer(app);
+const SKYWALKING_ENDPOINT = process.env.SKYWALKING_ENDPOINT || "http://127.0.0.1:12800";
+const PORT = parseInt(process.env.PORT || "5001", 10);
 
-declare module "http" {
-  interface IncomingMessage {
-    rawBody: unknown;
-  }
-}
-
-app.use(
-  express.json({
-    verify: (req, _res, buf) => {
-      req.rawBody = buf;
-    },
-  }),
-);
-
+// Parse incoming JSON and form data
+app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-export function log(message: string, source = "express") {
-  const formattedTime = new Date().toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: true,
-  });
+// Temporary storage to keep UI settings while the server is running
+const memoryStorage: Record<string, any> = {};
 
-  console.log(`${formattedTime} [${source}] ${message}`);
+// Helper to log messages with timestamps
+function log(message: string) {
+  const time = new Date().toLocaleTimeString("en-US", { hour12: true });
+  console.log(`${time} [server] ${message}`);
 }
 
-app.use((req, res, next) => {
-  const start = Date.now();
-  const path = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined = undefined;
+/** * API ROUTES 
+ */
 
-  const originalResJson = res.json;
-  res.json = function (bodyJson, ...args) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
-  };
-
-  res.on("finish", () => {
-    const duration = Date.now() - start;
-    if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      }
-
-      log(logLine);
-    }
-  });
-
-  next();
+// Fetch user preferences from memory
+app.get(api.preferences.get.path, (req, res) => {
+  const key = req.params.key;
+  res.json(memoryStorage[key] || { key, value: {} });
 });
 
-(async () => {
-  await registerRoutes(httpServer, app);
+// Save user preferences to memory
+app.post(api.preferences.save.path, (req, res) => {
+  const { key, value } = req.body;
+  memoryStorage[key] = { key, value, updatedAt: new Date() };
+  res.json(memoryStorage[key]);
+});
 
-  app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
+// Proxy requests to SkyWalking to avoid CORS issues
+app.post(api.graphql.proxy.path, async (req, res) => {
+  const graphqlUrl = `${SKYWALKING_ENDPOINT}/graphql`;
+  try {
+    const response = await fetch(graphqlUrl, {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+        ...(req.headers.authorization ? { Authorization: req.headers.authorization } : {}),
+      },
+      body: JSON.stringify(req.body),
+    });
 
-    console.error("Internal Server Error:", err);
-
-    if (res.headersSent) {
-      return next(err);
-    }
-
-    return res.status(status).json({ message });
-  });
-
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
-  if (process.env.NODE_ENV === "production") {
-    serveStatic(app);
-  } else {
-    const { setupVite } = await import("./vite");
-    await setupVite(httpServer, app);
+    const data = await response.json();
+    res.json(data);
+  } catch (error) {
+    console.error("Proxy Error:", error);
+    res.status(502).json({ message: "SkyWalking Connection Failed" });
   }
+});
 
-  // ALWAYS serve the app on the port specified in the environment variable PORT
-  // Other ports are firewalled. Default to 5000 if not specified.
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = parseInt(process.env.PORT || "5000", 10);
-  httpServer.listen(
-    {
-      port,
-      host: "0.0.0.0",
-      reusePort: true,
-    },
-    () => {
-      log(`serving on port ${port}`);
-    },
-  );
+/** * SERVER STARTUP 
+ */
+const httpServer = createServer(app);
+
+(async () => {
+  const { setupVite } = await import("./vite");
+  await setupVite(httpServer, app);
+
+  
+  httpServer.listen(PORT, "0.0.0.0", () => {
+    log(`SkyObserv running on port ${PORT}`);
+  });
 })();
