@@ -2,6 +2,9 @@
 
 SkyObserv Observability a modern, AI-powered observability platform that integrates Apache SkyWalking APM with TamboAI's generative UI capabilities. Ask questions in natural language and get instant visual insights about your services, metrics, traces, and topology.
 
+**Live Link**: https://skyobserv.onrender.com/
+**Demo Video Link**: https://www.loom.com/share/08cf7f3848504c1da6c7390da9c9b0cf
+
 
 ![alt text](./screenshots/image.png)
 ![alt text](./screenshots/image7.png)
