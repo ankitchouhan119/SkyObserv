@@ -67,14 +67,6 @@ export function ServiceInstancesCard({ instances = [], serviceName }: Props) {
                   
                   </div>
 
-                  {/* <div className="flex flex-col items-end gap-2">
-                    {instance.language && (
-                      <span className="flex items-center gap-1.5 px-2 py-0.5 bg-purple-500/10 border border-purple-500/20 rounded text-[10px] font-bold text-purple-400 uppercase tracking-wider">
-                        <Cpu className="w-3 h-3" />
-                        {instance.language}
-                      </span>
-                    )}
-                  </div> */}
                 </div>
 
                 {/* Attributes Grid */}
