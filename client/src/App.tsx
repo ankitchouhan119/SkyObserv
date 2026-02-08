@@ -15,7 +15,7 @@ import EndpointDetailPage from "./pages/EndpointDetailPage";
 
 import { components, tools } from "@/lib/tambo";
 import DatabasesPage from "./pages/DatabasesPage";
-// import "dotenv/config"
+
 
 function Router() {
   return (
@@ -34,8 +34,8 @@ function Router() {
 
 function App() {
 
-  const tamboApiKey = import.meta.env.VITE_TAMBO_API_KEY;
-  console.log("Key Found:", !!tamboApiKey);
+const tamboApiKey = import.meta.env.VITE_TAMBO_API_KEY;
+// console.log("Checking Key:", tamboApiKey);
   
   
   return (
