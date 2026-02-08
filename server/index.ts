@@ -116,14 +116,14 @@ app.post(api.graphql.proxy.path, async (req, res) => {
     const data = await response.json();
     res.json(data);
   } catch (error) {
-    log(`❌ Proxy Error: ${error}`);
+    log(`Proxy Error: ${error}`);
     res.status(502).json({ message: "SkyWalking Connection Failed" });
   }
 });
 
 const httpServer = createServer(app);
 
-// 🚀 LIVE MODE: Always use Vite in development to skip manual builds
+// LIVE MODE: Always use Vite in development to skip manual builds
 (async () => {
   try {
     const { setupVite } = await import("./vite");
