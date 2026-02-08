@@ -34,7 +34,9 @@ function Router() {
 
 function App() {
 
-  const tamboApiKey = import.meta.env.VITE_TAMBO_API_KEY
+  const tamboApiKey = import.meta.env.VITE_TAMBO_API_KEY;
+  console.log("Key Found:", !!tamboApiKey);
+  
   
   return (
     <ApolloProvider client={client}>

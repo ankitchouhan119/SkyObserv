@@ -188,6 +188,17 @@ PORT=5000
 SKYWALKING_ENDPOINT=http://127.0.0.1:12800
 ```
 
+
+### 3. Docker Build
+
+```
+docker build \                                                                                                    
+  --build-arg VITE_TAMBO_API_KEY="your_tabmo_api_key" \
+  -t image:latest .
+
+docker run -p 5000:5000 --env-file .env skyobserv:latest
+```
+
 ## Usage
 
 ### Development Mode
