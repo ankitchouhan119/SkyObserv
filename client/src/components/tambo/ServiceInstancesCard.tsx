@@ -45,27 +45,36 @@ export function ServiceInstancesCard({ instances = [], serviceName }: Props) {
                 {/* Header Section */}
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-center gap-3">
-                    <div className="p-2.5 bg-blue-500/10 rounded-xl group-hover:bg-blue-500/20 transition-colors">
+                    <div className="p-2.5 bg-blue-500/10 rounded-xl group-hover:bg-blue-500/20 mt-[-28px] transition-colors">
                       <Server className="w-5 h-5 text-blue-400" />
                     </div>
-                    <div>
-                      <h4 className="font-semibold text-sm text-white group-hover:text-blue-300 transition-colors">
+                    <div className="gap-2 flex flex-col">
+                      <h4 className="font-semibold text-xs text-white group-hover:text-blue-300 transition-colors">
                         {instance.name || 'Unknown Instance'}
                       </h4>
-                      <p className="text-[10px] text-muted-foreground font-mono mt-0.5">
+                      <p className="text-[10px] text-muted-foreground font-mono mt-[-4px]">
                         UUID: {instance.instanceUUID?.substring(0, 18) || 'N/A'}...
                       </p>
+                      <div className="gap-2 w-full flex items-end flex-col">
+                      {instance.language && (
+                        <span className="flex w-fit items-center gap-1.5 px-2 py-0.5 bg-purple-500/10 border border-purple-500/20 rounded text-[10px] font-bold text-purple-400 uppercase tracking-wider">
+                          <Cpu className="w-3 h-3" />
+                          {instance.language}
+                        </span>
+                      )}
                     </div>
+                    </div>
+                  
                   </div>
 
-                  <div className="flex flex-col items-end gap-2">
+                  {/* <div className="flex flex-col items-end gap-2">
                     {instance.language && (
                       <span className="flex items-center gap-1.5 px-2 py-0.5 bg-purple-500/10 border border-purple-500/20 rounded text-[10px] font-bold text-purple-400 uppercase tracking-wider">
                         <Cpu className="w-3 h-3" />
                         {instance.language}
                       </span>
                     )}
-                  </div>
+                  </div> */}
                 </div>
 
                 {/* Attributes Grid */}
