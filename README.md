@@ -127,7 +127,13 @@ docker.elastic.co/elasticsearch/elasticsearch:7.17.28
 docker.elastic.co/kibana/kibana:7.17.28
 
 # Port Forwarding to Localhost
-kubectl port-forward svc/elasticsearch 9200:9200
+kubectl port-forward svc/elasticsearch 9200:9200 &
+
+# Check running jobs
+jobs
+
+# Kill job
+kill %1
 
 ```
 **########################### **OR** #######################**

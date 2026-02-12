@@ -15,6 +15,7 @@ import EndpointDetailPage from "./pages/EndpointDetailPage";
 
 import { components, tools } from "@/lib/tambo";
 import DatabasesPage from "./pages/DatabasesPage";
+import DatabaseDetailPage from "@/pages/DatabaseDetailPage";
 
 
 function Router() {
@@ -26,6 +27,7 @@ function Router() {
       <Route path="/traces/:id" component={TraceDetailPage} />
       <Route path="/topology" component={TopologyPage} />
       <Route path="/databases" component={DatabasesPage} />
+      <Route path="/databases/:id" component={DatabaseDetailPage} />
       <Route path="/services/:serviceId/endpoints/:endpointId" component={EndpointDetailPage} />
       <Route component={NotFound} />
     </Switch>
