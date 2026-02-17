@@ -59,7 +59,7 @@ SkyObserv Observability a modern, AI-powered observability platform that integra
 │  │  │  - Traces Page   │  │  - MetricsCard           │    │ │
 │  │  │  - Topology Page │  │  - TopologyGraph         │    │ │
 │  │  │  - Database Page │  │  - EndpointsCard         │    │ │
-│  │  │                  │  │  - InstancesCard         │    │ │
+│  │  │                  │  │  - InstancesCard etc...  │    │ │
 │  │  └──────────────────┘  └──────────────────────────┘    │ │
 │  └────────────────────────────────────────────────────────┘ │
 └──────────────────────┬──────────────────────────────────────┘
@@ -166,7 +166,7 @@ docker run -d --name skywalking-oap-local \
 java -javaagent:skywalking-agent.jar \
 -Dskywalking.agent.service_name=demoApp \
 -Dskywalking.collector.backend_service=localhost:11800 \
--jar demoApp.jar
+-jar webapp-runner.jar onlinebookstore.war
 
 ```
 
@@ -191,7 +191,7 @@ The `.env` file is already configured with TamboAI API key:
 
 ```env
 # TamboAI API Key
-VITE_TAMBO_API_KEY="your_api_key"
+TAMBO_API_KEY=your_api_key
 
 # Server Configuration
 PORT=5000
@@ -202,11 +202,9 @@ SKYWALKING_ENDPOINT=http://127.0.0.1:12800
 ### 3. Docker Build
 
 ```
-docker build \                                                                                                    
-  --build-arg VITE_TAMBO_API_KEY="your_tabmo_api_key" \
-  -t image:latest .
+docker build -t image:latest .
 
-docker run -p 5000:5000 --env-file .env skyobserv:latest
+docker run -p 5000:5000 --env-file .env image:latest
 ```
 
 ## Usage

@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Switch, Route } from "wouter";
 import { ApolloProvider } from "@apollo/client";
 import { TamboProvider } from "@tambo-ai/react";
@@ -10,13 +11,12 @@ import ServiceDetailPage from "@/pages/ServiceDetailPage";
 import TracesPage from "@/pages/TracesPage";
 import TraceDetailPage from "@/pages/TraceDetailPage";
 import TopologyPage from "@/pages/TopologyPage";
+import DatabasesPage from "@/pages/DatabasesPage";
+import DatabaseDetailPage from "@/pages/DatabaseDetailPage";
+import EndpointDetailPage from "@/pages/EndpointDetailPage";
 import NotFound from "@/pages/not-found";
-import EndpointDetailPage from "./pages/EndpointDetailPage";
 
 import { components, tools } from "@/lib/tambo";
-import DatabasesPage from "./pages/DatabasesPage";
-import DatabaseDetailPage from "@/pages/DatabaseDetailPage";
-
 
 function Router() {
   return (
@@ -28,24 +28,36 @@ function Router() {
       <Route path="/topology" component={TopologyPage} />
       <Route path="/databases" component={DatabasesPage} />
       <Route path="/databases/:id" component={DatabaseDetailPage} />
-      <Route path="/services/:serviceId/endpoints/:endpointId" component={EndpointDetailPage} />
+      <Route
+        path="/services/:serviceId/endpoints/:endpointId"
+        component={EndpointDetailPage}
+      />
       <Route component={NotFound} />
     </Switch>
   );
 }
 
 function App() {
+  const [tamboKey, setTamboKey] = useState<string | null>(null);
 
-const tamboApiKey = import.meta.env.VITE_TAMBO_API_KEY;
-// console.log("Checking Key:", tamboApiKey);
-  
-  
+  useEffect(() => {
+    fetch("/config")
+      .then((res) => res.json())
+      .then((data) => setTamboKey(data.tamboApiKey))
+      .catch(() => setTamboKey(""));
+  }, []);
+
+  if (tamboKey === null) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <ApolloProvider client={client}>
       <TamboProvider
-        apiKey={tamboApiKey}
+        apiKey={tamboKey}
         components={components}
-        tools={tools}>
+        tools={tools}
+      >
         <TooltipProvider>
           <Router />
           <Toaster />
