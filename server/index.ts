@@ -78,10 +78,8 @@ app.post(api.graphql.proxy.path, async (req, res) => {
     } else {
       const distPath = path.join(__dirname, "../dist/public");
 
-      // 1️⃣ Serve static assets
       app.use(express.static(distPath));
 
-      // 2️⃣ SPA fallback (ONLY for browser navigation)
       app.use((req, res, next) => {
         if (req.method !== "GET") return next();
         if (!req.headers.accept?.includes("text/html")) return next();
