@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@apollo/client';
-import { GET_ALL_SERVICES, GET_ALL_DATABASES } from '@/apollo/queries/services';
+import { GET_ALL_SERVICES } from '@/apollo/queries/services';
+import { GET_ALL_DATABASES } from '@/apollo/queries/database';
 import { useDurationStore } from '@/store/useDurationStore';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card } from '@/components/ui/card';
@@ -23,14 +24,18 @@ export default function ServicesPage() {
     variables: { duration: durationObj },
   });
 
-  const rawServices = servicesData?.getAllServices || [];
+  const realServices = (servicesData?.getAllServices || []).filter((s: any) => {
+    const isDb = s.layers?.some((l: string) => l.includes('DATABASE') || l.includes('CACHE'));
+    return !isDb
+  });
+
   const databases = dbData?.getAllDatabases || [];
 
 
-  const healthyCount = rawServices.filter((s: any) => s.normal === true).length;
-  const unhealthyCount = rawServices.length - healthyCount;
+  const healthyCount = realServices.filter((s: any) => s.normal === true).length;
+  const unhealthyCount = realServices.length - healthyCount;
 
-  const filteredServices = rawServices.filter((s: any) => 
+  const filteredServices = realServices.filter((s: any) => 
     s.name.toLowerCase().includes(search.toLowerCase()) || 
     s.group?.toLowerCase().includes(search.toLowerCase())
   );
@@ -46,7 +51,7 @@ export default function ServicesPage() {
               <div className="p-3 bg-blue-500/10 rounded-lg"><Server className="w-6 h-6 text-blue-400" /></div>
               <div>
                 <p className="text-sm text-muted-foreground font-medium">Total Services</p>
-                <h2 className="text-3xl font-bold">{servicesLoading ? '...' : rawServices.length}</h2>
+                <h2 className="text-3xl font-bold">{servicesLoading ? '...' : realServices.length}</h2>
               </div>
             </div>
           </Card>

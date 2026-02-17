@@ -16,6 +16,7 @@ import { TopologyGraphCard } from "@/components/tambo/TopologyGraphCard";
 import { DatabaseListCard } from "@/components/tambo/DatabaseListCard";
 import { ServiceInstancesCard } from "@/components/tambo/ServiceInstancesCard";
 import { EndpointsListCard } from "@/components/tambo/EndpointsListCard";
+import { DBInsightsCard } from "@/components/tambo/DBInsightsCard";
 
 // Import tools
 import { allTools } from "./tambo-tools";
@@ -69,18 +70,18 @@ const tracesListSchema = z.object({
   ).describe("List of distributed traces"),
 });
 
-
-
-
-
-
-
-
-
-
-
-
-
+const dbInsightsSchema = z.object({
+  dbName: z.string().describe("The name or IP of the database"),
+  avgLatency: z.number().describe("Average latency in ms"),
+  throughput: z.number().describe("Number of calls/traces found"),
+  successRate: z.string().describe("Success percentage (e.g. '100%')"),
+  latestQueries: z.array(
+    z.object({
+      sql: z.string().describe("The SQL statement or endpoint name"),
+      latency: z.number().describe("Latency of this specific query")
+    })
+  ).describe("List of recent database executions"),
+});
 
 
 // const topologyGraphSchema = z.object({
@@ -109,18 +110,6 @@ const topologyGraphSchema = z.object({
     })
   ).optional().describe("List of service calls/edges"),
 });
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -188,6 +177,12 @@ export const components: TamboComponent[] = [
     description: "Lists API routes/endpoints for a service.",
     component: EndpointsListCard,
     propsSchema: toJsonSchema(z.object({ endpoints: z.array(z.any()) })),
+  },
+  {
+    name: "DBInsightsCard",
+    description: "Displays deep database analytics including trace-based latency, throughput, and SQL executions. Use when the user asks for DB status, health, or insights.",
+    component: DBInsightsCard,
+    propsSchema: toJsonSchema(dbInsightsSchema),
   },
 ];
 
