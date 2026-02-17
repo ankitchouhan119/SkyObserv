@@ -1,23 +1,28 @@
-FROM node:20-alpine AS build-stage
+# ---------- BUILD ----------
+FROM node:20-alpine AS builder
 WORKDIR /app
-
-ARG VITE_TAMBO_API_KEY
 
 COPY package*.json ./
 RUN npm install
+
 COPY . .
+RUN npm run build
 
-RUN VITE_TAMBO_API_KEY=$VITE_TAMBO_API_KEY npm run build
 
+# ---------- PRODUCTION ----------
 FROM node:20-alpine
 WORKDIR /app
-COPY --from=build-stage /app/package*.json ./
-COPY --from=build-stage /app/node_modules ./node_modules
-COPY --from=build-stage /app/dist ./dist
-COPY --from=build-stage /app/server ./server
-COPY --from=build-stage /app/shared ./shared
-COPY --from=build-stage /app/tsconfig.json ./
+
+ENV NODE_ENV=production
+
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/server ./server
+COPY --from=builder /app/shared ./shared
+COPY --from=builder /app/tsconfig.json ./
 
 RUN npm install -g tsx
+
 EXPOSE 5000
 CMD ["tsx", "server/index.ts"]
