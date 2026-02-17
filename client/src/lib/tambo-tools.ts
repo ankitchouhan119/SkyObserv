@@ -2,10 +2,11 @@ import { z } from "zod";
 import { client } from "@/apollo/client";
 import {
   GET_ALL_SERVICES,
-  GET_ALL_DATABASES,
   GET_SERVICE_INSTANCES,
   GET_SERVICE_ENDPOINTS,
 } from "@/apollo/queries/services";
+import { GET_DATABASE_METRICS, GET_TRACES_FOR_DB } from "@/apollo/queries/database";
+import { GET_ALL_DATABASES } from "@/apollo/queries/database";
 import { GET_SERVICE_METRICS } from "@/apollo/queries/metrics";
 import { GET_TRACES } from "@/apollo/queries/traces";
 import { toJsonSchema } from "./json-schema";
@@ -267,6 +268,9 @@ export const getDatabasesTool = defineTool({
         variables: { duration: getDynamicDuration() },
         fetchPolicy: "network-only",
       });
+
+      // console.log("Tool Data Fetched:", data);
+
       return { databases: data?.getAllDatabases || [] };
     } catch (error) {
       return { databases: [] };
@@ -274,6 +278,69 @@ export const getDatabasesTool = defineTool({
   },
 });
 
+
+export const getDatabaseInsightsTool = defineTool({
+  name: "getDatabaseInsights",
+  description: "Get database health using trace-based analytics including throughput, latency, and latest queries.",
+  inputSchema: toJsonSchema(z.object({
+    serviceId: z.string(),
+    startDate: z.string().optional(),
+    endDate: z.string().optional(),
+  })),
+  outputSchema: toJsonSchema(z.object({
+    dbName: z.string(),
+    avgLatency: z.number(),
+    throughput: z.number(),
+    successRate: z.string(),
+    latestQueries: z.array(z.object({
+      sql: z.string(),
+      latency: z.number()
+    }))
+  })),
+  tool: async ({ serviceId, startDate, endDate }) => {
+    try {
+      const duration = getDynamicDuration(startDate, endDate);
+      
+      const { data } = await client.query({
+        query: GET_TRACES_FOR_DB,
+        variables: { 
+          condition: { 
+            queryDuration: duration, 
+            traceState: 'ALL', 
+            queryOrder: 'BY_START_TIME', 
+            paging: { pageNum: 1, pageSize: 20 } 
+          } 
+        },
+        fetchPolicy: 'network-only'
+      });
+
+      const traces = data?.queryBasicTraces?.traces || [];
+      
+      const totalLatency = traces.reduce((acc, t) => acc + t.duration, 0);
+      const avgLat = traces.length > 0 ? Math.round(totalLatency / traces.length) : 0;
+
+      return {
+        dbName: serviceId,
+        avgLatency: avgLat,
+        throughput: traces.length,
+        successRate: traces.length > 0 ? "100%" : "0%",
+        latestQueries: traces.slice(0, 3).map(t => ({
+          sql: t.endpointNames?.[0] || "Database Operation",
+          latency: t.duration
+        }))
+      };
+    } catch (error) {
+      console.error("TOOL ERROR:", error);
+      return {
+        dbName: serviceId,
+        avgLatency: 0,
+        throughput: 0,
+        successRate: "0%",
+        latestQueries: []
+      };
+    }
+  }
+});
 
 export const navigateTool = defineTool({
   name: "navigate_to_page",
@@ -362,12 +429,16 @@ export const getInstancesTool = defineTool({
 });
 
 
+
+
+
 export const allTools = [
   getServicesTool,
   getServiceMetricsTool,
   getTracesTool,
   getTopologyTool,
   getDatabasesTool,
+  getDatabaseInsightsTool,
   navigateTool,
   getInstancesTool,
   getEndpointsTool

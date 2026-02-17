@@ -28,16 +28,6 @@ export const GET_SERVICE_INSTANCES = gql`
   }
 `;
 
-export const GET_ALL_DATABASES = gql`
-  query getAllDatabases($duration: Duration!) {
-    getAllDatabases(duration: $duration) {
-      id
-      name
-      type
-    }
-  }
-`;
-
 
 
 export const GET_SERVICE_ENDPOINTS = gql`
