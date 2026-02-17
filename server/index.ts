@@ -45,6 +45,28 @@ app.post(api.preferences.save.path, (req, res) => {
   res.json(memoryStorage[key]);
 });
 
+const SKYWALKING_ENDPOINT =
+  process.env.SKYWALKING_ENDPOINT || "http://127.0.0.1:12800";
+
+app.post(api.graphql.proxy.path, async (req, res) => {
+  try {
+    const response = await fetch(`${SKYWALKING_ENDPOINT}/graphql`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(req.body),
+    });
+
+    const data = await response.json();
+    res.json(data);
+  } catch (err) {
+    console.error("GraphQL Proxy Error:", err);
+    res.status(500).json({ message: "GraphQL proxy failed" });
+  }
+});
+
+
 /* ---------------- DEV vs PROD ---------------- */
 
 (async () => {
@@ -56,14 +78,17 @@ app.post(api.preferences.save.path, (req, res) => {
     } else {
       const distPath = path.join(__dirname, "../dist/public");
 
+      // 1️⃣ Serve static assets
       app.use(express.static(distPath));
 
-      // app.get("/*", (_, res) => {
-      //   res.sendFile(path.join(distPath, "index.html"));
-      // });
-      app.use((req, res) => {
+      // 2️⃣ SPA fallback (ONLY for browser navigation)
+      app.use((req, res, next) => {
+        if (req.method !== "GET") return next();
+        if (!req.headers.accept?.includes("text/html")) return next();
+
         res.sendFile(path.join(distPath, "index.html"));
       });
+
       log("Running in PRODUCTION mode");
     }
 
