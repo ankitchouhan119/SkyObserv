@@ -67,6 +67,71 @@ app.post(api.graphql.proxy.path, async (req, res) => {
 });
 
 
+
+/* ---------------- K8S POD LIVE LOGS ---------------- */
+
+// app.get("/api/pod-logs/:namespace/:podName", async (req, res) => {
+//   const { namespace, podName } = req.params;
+//   const tail = (req.query.tail as string) || "100";
+
+//   res.setHeader("Content-Type", "text/event-stream");
+//   res.setHeader("Cache-Control", "no-cache");
+//   res.setHeader("Connection", "keep-alive");
+//   res.flushHeaders();
+
+//   const { spawn } = await import("child_process");
+
+//   const kubectl = spawn(
+//     "/snap/bin/kubectl",
+//     [
+//       "logs",
+//       podName,
+//       "-n",
+//       namespace,
+//       "--tail=50",
+//     ],
+//     {
+//       env: {
+//         HOME: "/home/ankit119",
+//         KUBECONFIG: "/home/ankit119/.kube/config",
+//       },
+//       stdio: ["ignore", "pipe", "pipe"],
+//     }
+//   );
+
+//   kubectl.stdout.on("data", (chunk: Buffer) => {
+//     const lines = chunk.toString().split("\n").filter(Boolean);
+//     for (const line of lines) {
+//       res.write(`data: ${line}\n\n`);
+//     }
+//   });
+
+// kubectl.stderr.on("data", (err: Buffer) => {
+//   const msg = err.toString().trim();
+//   console.error("kubectl stderr:", msg);
+//   res.write(`data: [KUBECTL ERROR] ${msg}\n\n`);
+// });
+
+//   kubectl.on("error", (err) => {
+//     console.error("Spawn error:", err);
+//     res.write(`data: [ERROR spawning kubectl]\n\n`);
+//   });
+
+//   kubectl.on("close", (code) => {
+//     console.log(`kubectl exited with code ${code}`);
+//     if (code !== 0) {
+//       res.write(`data: [Stream ended unexpectedly]\n\n`);
+//     }
+//     res.end();
+//   });
+
+//   req.on("close", () => {
+//     kubectl.kill("SIGINT");
+//   });
+// });
+
+
+
 /* ---------------- DEV vs PROD ---------------- */
 
 (async () => {

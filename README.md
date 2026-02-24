@@ -580,3 +580,55 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ---
 
 **Built with ❤️ using TamboAI Generative UI**
+
+
+
+
+
+docker run -d --name skywalking-oap-local \
+  --network host \
+  -e SW_STORAGE=elasticsearch \
+  -e SW_STORAGE_ES_CLUSTER_NODES=127.0.0.1:9200 \
+  -e JAVA_OPTS="-Xms1g -Xmx1g" \
+  -e SW_RECEIVER_K8S_METRICS=default \
+  -e SW_K8S_API_SERVER_HOST=127.0.0.1 \
+  -e SW_K8S_API_SERVER_PORT=6443 \
+  -e SW_OTEL_RECEIVER=default \
+  -e SW_OTEL_RECEIVER_ENABLED_OTEL_METRICS=true \
+  apache/skywalking-oap-server:10.0.0
+
+
+
+
+
+  docker run -d \                                                                                                   
+  --name skywalking-oap-local \
+  --network host \
+  -e SW_STORAGE=elasticsearch \
+  -e SW_STORAGE_ES_CLUSTER_NODES=127.0.0.1:9200 \
+  -e SW_OTEL_RECEIVER=default \
+  -e SW_OTEL_RECEIVER_ENABLED_HANDLERS="otlp-metrics" \
+  -e SW_OTEL_RECEIVER_ENABLED_OTEL_METRICS_RULES="k8s/*" \
+  -e JAVA_OPTS="-Xms1g -Xmx1g" \
+  -v /home/ankit119/skywalking-rules:/skywalking/config/otel-rules \
+  apache/skywalking-oap-server:10.0.0
+
+
+
+
+
+docker run -d \
+  --name skywalking-oap-local \
+  --network host \
+  -e SW_STORAGE=elasticsearch \
+  -e SW_STORAGE_ES_CLUSTER_NODES=127.0.0.1:9200 \
+  -e SW_OTEL_RECEIVER=default \
+  -e SW_OTEL_RECEIVER_ENABLED_HANDLERS="otlp-metrics" \
+  -e SW_OTEL_RECEIVER_ENABLED_OTEL_METRICS_RULES="k8s/*" \
+  -e JAVA_OPTS="-Xms1g -Xmx1g" \
+  -v ~/.kube/config:/root/.kube/config:ro \
+  -v /home/ankit119/.minikube:/home/ankit119/.minikube:ro \
+  -v /home/ankit119/skywalking-rules:/skywalking/config/otel-rules \
+  apache/skywalking-oap-server:10.0.0
+
+

@@ -1,0 +1,169 @@
+# apiVersion: v1
+# kind: ServiceAccount
+# metadata:
+#   name: otel-collector-sa
+#   namespace: default
+# ---
+# apiVersion: rbac.authorization.k8s.io/v1
+# kind: ClusterRole
+# metadata:
+#   name: otel-collector-role
+# rules:
+# - apiGroups: [""]
+#   resources:
+#     - pods
+#     - nodes
+#     - nodes/proxy
+#     - nodes/metrics
+#     - namespaces
+#     - endpoints
+#     - services
+#     - replicationcontrollers
+#     - resourcequotas
+#     - events
+#   verbs: ["get", "list", "watch"]
+# - apiGroups: ["apps"]
+#   resources: ["replicasets", "deployments", "daemonsets", "statefulsets"]
+#   verbs: ["get", "list", "watch"]
+# - apiGroups: ["batch"]
+#   resources: ["jobs", "cronjobs"]
+#   verbs: ["get", "list", "watch"]
+# - apiGroups: ["autoscaling"]
+#   resources: ["horizontalpodautoscalers"]
+#   verbs: ["get", "list", "watch"]
+# - nonResourceURLs:
+#     - /metrics
+#     - /metrics/cadvisor
+#   verbs: ["get"]
+# ---
+# apiVersion: rbac.authorization.k8s.io/v1
+# kind: ClusterRoleBinding
+# metadata:
+#   name: otel-collector-rb
+# subjects:
+# - kind: ServiceAccount
+#   name: otel-collector-sa
+#   namespace: default
+# roleRef:
+#   kind: ClusterRole
+#   name: otel-collector-role
+#   apiGroup: rbac.authorization.k8s.io
+# ---
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: otel-collector
+#   namespace: default
+# spec:
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: otel-collector
+#   template:
+#     metadata:
+#       labels:
+#         app: otel-collector
+#     spec:
+#       serviceAccountName: otel-collector-sa
+#       containers:
+#       - name: otel-collector
+#         image: otel/opentelemetry-collector-contrib:0.145.0
+#         command:
+#           - "/otelcol-contrib"
+#           - "--config=/etc/otel-collector-config.yaml"
+#         env:
+#         - name: K8S_NODE_NAME
+#           valueFrom:
+#             fieldRef:
+#               fieldPath: spec.nodeName
+#         resources:
+#           requests:
+#             memory: "256Mi"
+#             cpu: "100m"
+#           limits:
+#             memory: "512Mi"
+#             cpu: "500m"
+#         volumeMounts:
+#         - name: otel-collector-config-vol
+#           mountPath: /etc/otel-collector-config.yaml
+#           subPath: otel-collector-config
+#       volumes:
+#       - name: otel-collector-config-vol
+#         configMap:
+#           name: otel-collector-conf
+
+
+
+
+
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: otel-collector-sa
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: otel-collector-role
+rules:
+- apiGroups: [""]
+  resources: ["pods", "nodes", "nodes/proxy", "nodes/metrics", "services", "endpoints", "namespaces"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["apps"]
+  resources: ["replicasets", "deployments", "daemonsets", "statefulsets"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["batch"]
+  resources: ["jobs", "cronjobs"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: otel-collector-rb
+subjects:
+- kind: ServiceAccount
+  name: otel-collector-sa
+  namespace: default
+roleRef:
+  kind: ClusterRole
+  name: otel-collector-role
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otel-collector
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: otel-collector
+  template:
+    metadata:
+      labels:
+        app: otel-collector
+    spec:
+      serviceAccountName: otel-collector-sa
+      containers:
+      - name: otel-collector
+        image: otel/opentelemetry-collector-contrib:0.114.0 # Stable version
+        command:
+          - "/otelcol-contrib"
+          - "--config=/etc/otel-collector-config.yaml"
+        env:
+        - name: K8S_NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        volumeMounts:
+        - name: otel-collector-config-vol
+          mountPath: /etc/otel-collector-config.yaml
+          subPath: otel-collector-config
+      volumes:
+      - name: otel-collector-config-vol
+        configMap:
+          name: otel-collector-conf

@@ -17,6 +17,9 @@ import EndpointDetailPage from "@/pages/EndpointDetailPage";
 import NotFound from "@/pages/not-found";
 
 import { components, tools } from "@/lib/tambo";
+import K8sPage from "./pages/K8sPage";
+import K8sNamespaceDetailPage from "./pages/K8sNamespaceDetailPage";
+import K8sPodDetailPage from "./pages/K8sPodDetailPage";
 
 function Router() {
   return (
@@ -28,10 +31,14 @@ function Router() {
       <Route path="/topology" component={TopologyPage} />
       <Route path="/databases" component={DatabasesPage} />
       <Route path="/databases/:id" component={DatabaseDetailPage} />
+      <Route path="/kubernetes" component={K8sPage} />
+      <Route path="/kubernetes/namespace/:name" component={K8sNamespaceDetailPage} />
       <Route
         path="/services/:serviceId/endpoints/:endpointId"
         component={EndpointDetailPage}
       />
+      {/* <Route path="/kubernetes/namespace/:ns/pod/:podName" component={K8sPodDetailPage} /> */}
+      <Route path="/kubernetes/namespace/:name/pod/:podName" component={K8sPodDetailPage} />
       <Route component={NotFound} />
     </Switch>
   );

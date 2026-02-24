@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Link, useLocation } from 'wouter';
-import { Activity, Layers, GitBranch, Database } from 'lucide-react';
+import { Activity, Layers, GitBranch, Database, Box } from 'lucide-react';
 import { DurationSelector } from '@/components/common/DurationSelector';
 import { CustomRangePicker } from '../common/CustomRangePicker';
 import { MessageThreadCollapsible } from '../tambo/message-thread-collapsible';
@@ -79,6 +79,7 @@ export function AppLayout({ children }: AppLayoutProps) {
     { label: 'Traces', href: '/traces', icon: GitBranch },
     { label: 'Topology', href: '/topology', icon: Activity },
     { label: 'Databases', href: '/databases', icon: Database },
+    { label: 'Kubernetes', href: '/kubernetes', icon: Box },
   ];
 
   // Generate Dynamic Prompt with LIVE TIME
