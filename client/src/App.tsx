@@ -20,6 +20,7 @@ import { components, tools } from "@/lib/tambo";
 import K8sPage from "./pages/K8sPage";
 import K8sNamespaceDetailPage from "./pages/K8sNamespaceDetailPage";
 import K8sPodDetailPage from "./pages/K8sPodDetailPage";
+import K8sMetricDebugger from "./pages/K8sDebug";
 
 function Router() {
   return (
@@ -32,6 +33,8 @@ function Router() {
       <Route path="/databases" component={DatabasesPage} />
       <Route path="/databases/:id" component={DatabaseDetailPage} />
       <Route path="/kubernetes" component={K8sPage} />
+      <Route path="/kubernetes/debug" component={K8sMetricDebugger} />
+
       <Route path="/kubernetes/namespace/:name" component={K8sNamespaceDetailPage} />
       <Route
         path="/services/:serviceId/endpoints/:endpointId"

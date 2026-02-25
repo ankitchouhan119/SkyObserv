@@ -27,7 +27,6 @@ function getNamespace(fullName: string) {
   return parts.length > 1 ? parts[parts.length - 1] : 'default';
 }
 
-// 🛡️ ROBUST HELPER: Handles empty arrays [] and nulls from SkyWalking
 function getMQEValue(data: any): number {
   try {
     const results = data?.result?.results;
@@ -70,7 +69,7 @@ export default function K8sPage() {
     [services]
   );
 
-  // 🚀 MQE Metrics Fetching (100% Raw Data)
+  // MQE Metrics Fetching (100% Raw Data)
   useEffect(() => {
     async function fetchClusterMetrics() {
       if (clusters.length === 0) return;
@@ -118,7 +117,7 @@ export default function K8sPage() {
         });
 
       } catch (e: any) {
-        console.error("❌ Metrics Sync Failed:", e.message);
+        // console.error("Metrics Sync Failed:", e.message);
       } finally {
         setLoadingMetrics(false);
       }
@@ -126,7 +125,7 @@ export default function K8sPage() {
     fetchClusterMetrics();
   }, [clusters, durationObj, client]);
 
-  // 🛡️ DYNAMIC SECURITY SCANNER
+  // DYNAMIC SECURITY SCANNER
   const securityStatus = useMemo(() => {
     const rbacActive = clusters.length > 0 && services.length > 0;
     const tlsDetected = services.some((s: any) => s.name.toLowerCase().includes('ingress') || s.name.toLowerCase().includes('cert'));
@@ -214,7 +213,7 @@ export default function K8sPage() {
                         <MetricBar label="CPU Load" value={metrics.cpuPercent} color={metrics.cpuPercent >= 90 ? "bg-red-500" : "bg-blue-500"} />
                         <MetricBar label="Memory Load" value={metrics.mem} color="bg-purple-500" />
                         
-                        {/* 🚀 New Metric: Pod Saturation (Replaced Disk Usage) */}
+                        {/* New Metric: Pod Saturation (Replaced Disk Usage) */}
                         <div className="space-y-1.5 pt-1">
                           <div className="flex justify-between text-[9px] font-black uppercase italic tracking-tighter">
                             <span className="text-muted-foreground/60">Pod Saturation</span>

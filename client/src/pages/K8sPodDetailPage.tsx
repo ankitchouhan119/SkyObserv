@@ -8,8 +8,6 @@ import { ArrowLeft, Box, Layers, Waypoints, Copy, Activity, Zap } from 'lucide-r
 import { GET_INSTANCE_DETAIL, GET_MQE_METRICS } from '@/apollo/queries/kubernetes';
 import { useDurationStore } from '@/store/useDurationStore';
 import { cn } from '@/lib/utils';
-
-// Components
 import { K8sPodTopologyPanel } from '@/components/k8s/K8sPodTopologyPanel';
 import { K8sPodEventsPanel } from '@/components/k8s/K8sPodEventsPanel';
 import { K8sPodPropertiesPanel } from '@/components/k8s/K8sPodPropertiesPanel';
@@ -116,7 +114,6 @@ export default function K8sPodDetailPage() {
               <div>
                 <h1 className="text-3xl font-black text-white italic tracking-tighter truncate max-w-xl">{podDisplayName}</h1>
                 <div className="flex items-center gap-2 mt-1 font-black text-[10px]  tracking-widest text-muted-foreground">
-                  {/* <span className="text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded uppercase border border-blue-500/20">NS: {namespace}</span> */}
                   <span>ID: {instanceId}</span>
                 </div>
               </div>
@@ -167,7 +164,6 @@ export default function K8sPodDetailPage() {
               </Card>
             </div>
 
-            {/* 🚀 Diagnostic Panel: DHYAN SE DEKHO YAHAN rawInstanceId pass ho raha hai */}
             {!loading && !error && (
               <K8sPodPropertiesPanel 
                 attrs={attrs}
@@ -195,3 +191,27 @@ export default function K8sPodDetailPage() {
     </AppLayout>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
