@@ -1,0 +1,412 @@
+# # =========================
+# # CONFIG MAP
+# # =========================
+# apiVersion: v1
+# kind: ConfigMap
+# metadata:
+#   name: otel-collector-conf
+#   namespace: default
+# data:
+#   otel-collector-config: |
+#     receivers:
+#       prometheus:
+#         config:
+#           scrape_configs:
+
+#             # -----------------------------
+#             # kube-state-metrics
+#             # -----------------------------
+#             - job_name: 'kube-state-metrics'
+#               scrape_interval: 30s
+#               static_configs:
+#                 - targets:
+#                     - kube-state-metrics.kube-system.svc.cluster.local:8080
+#               relabel_configs:
+#                 - target_label: cluster
+#                   replacement: k8s-cluster
+
+#             # -----------------------------
+#             # 🔥 KUBELET (NODE + POD METRICS)
+#             # -----------------------------
+#             - job_name: 'kubelet'
+#               scheme: https
+#               scrape_interval: 30s
+#               tls_config:
+#                 insecure_skip_verify: true
+#               bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+#               kubernetes_sd_configs:
+#                 - role: node
+#               relabel_configs:
+#                 - action: labelmap
+#                   regex: __meta_kubernetes_node_label_(.+)
+#                 - target_label: cluster
+#                   replacement: k8s-cluster
+#                 - target_label: __address__
+#                   replacement: kubernetes.default.svc:443
+#                 - source_labels: [__meta_kubernetes_node_name]
+#                   target_label: __metrics_path__
+#                   replacement: /api/v1/nodes/$1/proxy/metrics
+
+#     processors:
+#       resource:
+#         attributes:
+#           - key: cluster
+#             value: k8s-cluster
+#             action: insert
+
+#       k8sattributes:
+#         extract:
+#           metadata:
+#             - k8s.pod.name
+#             - k8s.node.name
+#             - k8s.namespace.name
+#             - k8s.pod.ip
+#             - k8s.deployment.name
+#             - k8s.replicaset.name
+#             - k8s.daemonset.name
+#             - k8s.statefulset.name
+#         pod_association:
+#           - sources:
+#               - from: resource_attribute
+#                 name: k8s.pod.name
+
+#       batch:
+#         send_batch_size: 1000
+#         timeout: 5s
+
+#     exporters:
+#       otlp_grpc:
+#         endpoint: 192.168.49.1:11800
+#         tls:
+#           insecure: true
+
+#     service:
+#       pipelines:
+#         metrics:
+#           receivers: [prometheus]
+#           processors: [k8sattributes, resource, batch]
+#           exporters: [otlp_grpc]
+
+# ---
+# # =========================
+# # SERVICE ACCOUNT
+# # =========================
+# apiVersion: v1
+# kind: ServiceAccount
+# metadata:
+#   name: otel-collector-sa
+#   namespace: default
+
+# ---
+# # =========================
+# # CLUSTER ROLE
+# # =========================
+# apiVersion: rbac.authorization.k8s.io/v1
+# kind: ClusterRole
+# metadata:
+#   name: otel-collector-role
+# rules:
+# - apiGroups: [""]
+#   resources:
+#     - pods
+#     - nodes
+#     - nodes/proxy
+#     - nodes/metrics
+#     - services
+#     - endpoints
+#     - namespaces
+#   verbs: ["get", "list", "watch"]
+
+# - apiGroups: ["apps"]
+#   resources:
+#     - replicasets
+#     - deployments
+#     - daemonsets
+#     - statefulsets
+#   verbs: ["get", "list", "watch"]
+
+# ---
+# # =========================
+# # CLUSTER ROLE BINDING
+# # =========================
+# apiVersion: rbac.authorization.k8s.io/v1
+# kind: ClusterRoleBinding
+# metadata:
+#   name: otel-collector-rb
+# subjects:
+# - kind: ServiceAccount
+#   name: otel-collector-sa
+#   namespace: default
+# roleRef:
+#   kind: ClusterRole
+#   name: otel-collector-role
+#   apiGroup: rbac.authorization.k8s.io
+
+# ---
+# # =========================
+# # DEPLOYMENT
+# # =========================
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: otel-collector
+#   namespace: default
+# spec:
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: otel-collector
+#   template:
+#     metadata:
+#       labels:
+#         app: otel-collector
+#     spec:
+#       serviceAccountName: otel-collector-sa
+#       containers:
+#       - name: otel-collector
+#         image: otel/opentelemetry-collector-contrib:0.145.0
+#         command:
+#           - "/otelcol-contrib"
+#           - "--config=/etc/otel-collector-config.yaml"
+#         volumeMounts:
+#         - name: otel-collector-config-vol
+#           mountPath: /etc/otel-collector-config.yaml
+#           subPath: otel-collector-config
+#       volumes:
+#       - name: otel-collector-config-vol
+#         configMap:
+#           name: otel-collector-conf
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-collector-conf
+  namespace: default
+data:
+  otel-collector-config: |
+    receivers:
+      prometheus:
+        config:
+          scrape_configs:
+            - job_name: 'kube-state-metrics' # Strict Match for Image 3
+              scrape_interval: 30s
+              static_configs:
+                - targets: ['kube-state-metrics.kube-system.svc.cluster.local:8080']
+              relabel_configs:
+                - target_label: cluster
+                  replacement: k8s-cluster
+
+            - job_name: 'kubernetes-cadvisor'
+              scheme: https
+              scrape_interval: 30s
+              tls_config: { insecure_skip_verify: true }
+              bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+              kubernetes_sd_configs: [{ role: node }]
+              relabel_configs:
+                - action: labelmap
+                  regex: __meta_kubernetes_node_label_(.+)
+                - source_labels: [__meta_kubernetes_node_name]
+                  target_label: node
+                - target_label: cluster
+                  replacement: k8s-cluster
+                - target_label: __address__
+                  replacement: kubernetes.default.svc:443
+                - source_labels: [__meta_kubernetes_node_name]
+                  target_label: __metrics_path__
+                  replacement: /api/v1/nodes/$$1/proxy/metrics/cadvisor
+
+    processors:
+      k8sattributes:
+        extract:
+          metadata: [k8s.pod.name, k8s.node.name, k8s.namespace.name]
+      
+      # 🔥 Image 3 Fix: id="/" label insert karna mandatory hai
+      attributes:
+        actions:
+          - key: id
+            value: "/"
+            action: insert
+          - key: cluster
+            value: k8s-cluster
+            action: insert
+          - key: node
+            from_attribute: k8s.node.name
+            action: insert
+          # 🔥 Image 4 Fix: Service mapping ke liye pod aur namespace zaroori hain
+          - key: pod
+            from_attribute: k8s.pod.name
+            action: insert
+          - key: namespace
+            from_attribute: k8s.namespace.name
+            action: insert
+
+      resource:
+        attributes:
+          - key: service.name
+            value: k8s-cluster
+            action: insert
+          - key: cluster
+            value: k8s-cluster
+            action: insert
+
+      batch:
+        send_batch_size: 1000
+        timeout: 5s
+
+    exporters:
+      otlp_grpc:
+        endpoint: 192.168.49.1:11800
+        tls: { insecure: true }
+
+    service:
+      pipelines:
+        metrics:
+          receivers: [prometheus]
+          processors: [k8sattributes, attributes, resource, batch]
+          exporters: [otlp_grpc]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# apiVersion: v1
+# kind: ConfigMap
+# metadata:
+#   name: otel-collector-conf
+#   namespace: default
+# data:
+#   otel-collector-config: |
+#     receivers:
+#       prometheus:
+#         config:
+#           scrape_configs:
+#             # 1. KUBE STATE METRICS (Ye already sahi chal raha hai)
+#             - job_name: 'kube-state-metrics'
+#               scrape_interval: 30s
+#               static_configs:
+#                 - targets: ['kube-state-metrics.kube-system.svc.cluster.local:8080']
+#               relabel_configs:
+#                 - target_label: cluster
+#                   replacement: k8s-cluster
+
+#             # 2. cADVISOR (Yahan FIX ki zaroorat hai)
+#             - job_name: 'kubernetes-cadvisor'
+#               scheme: https
+#               scrape_interval: 30s
+#               tls_config: { insecure_skip_verify: true }
+#               bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+#               kubernetes_sd_configs: [{ role: node }]
+#               relabel_configs:
+#                 - action: labelmap
+#                   regex: __meta_kubernetes_node_label_(.+)
+#                 - source_labels: [__meta_kubernetes_node_name]
+#                   target_label: node
+#                 - target_label: cluster
+#                   replacement: k8s-cluster
+#                 - target_label: __address__
+#                   replacement: kubernetes.default.svc:443
+#                 - source_labels: [__meta_kubernetes_node_name]
+#                   target_label: __metrics_path__
+#                   replacement: /api/v1/nodes/$$1/proxy/metrics/cadvisor
+              
+#               # 🔥🔥 JAADU YAHAN HAI (MAGIC FIX) 🔥🔥
+#               # Ye labels rename karega taaki SkyWalking CPU/Mem data accept kare
+#               metric_relabel_configs:
+#                 - source_labels: [namespace_name]
+#                   target_label: namespace
+#                 - source_labels: [pod_name]
+#                   target_label: pod
+#                 - source_labels: [container_name]
+#                   target_label: container
+
+#     processors:
+#       k8sattributes:
+#         auth_type: "serviceAccount"
+#         passthrough: false
+#         extract:
+#           metadata: [k8s.pod.name, k8s.node.name, k8s.namespace.name]
+#         pod_association:
+#           - sources: [{from: resource_attribute, name: k8s.pod.ip}]
+#           - sources: [{from: resource_attribute, name: k8s.pod.uid}]
+#           - sources: [{from: connection}]
+
+#       attributes:
+#         actions:
+#           - key: id
+#             value: "/"
+#             action: upsert
+#           - key: cluster
+#             value: k8s-cluster
+#             action: upsert
+#           - key: node
+#             from_attribute: k8s.node.name
+#             action: upsert
+#           - key: pod
+#             from_attribute: k8s.pod.name
+#             action: upsert
+#           - key: namespace
+#             from_attribute: k8s.namespace.name
+#             action: upsert
+
+#       resource:
+#         attributes:
+#           - key: service.name
+#             value: k8s-cluster
+#             action: upsert
+#           - key: cluster
+#             value: k8s-cluster
+#             action: upsert
+
+#       batch:
+#         send_batch_size: 1000
+#         timeout: 5s
+
+#     exporters:
+#       otlp_grpc:
+#         endpoint: 192.168.49.1:11800
+#         tls: { insecure: true }
+
+#     service:
+#       pipelines:
+#         metrics:
+#           receivers: [prometheus]
+#           processors: [k8sattributes, attributes, resource, batch]
+#           exporters: [otlp_grpc]
+
+
+
+
+
+
+
+
+
+
+
+
+

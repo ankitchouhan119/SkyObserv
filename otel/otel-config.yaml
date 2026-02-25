@@ -1,0 +1,111 @@
+# apiVersion: v1
+# kind: ConfigMap
+# metadata:
+#   name: otel-collector-conf
+#   namespace: default
+
+# data:
+#   otel-collector-config: |
+#     receivers:
+#       prometheus:
+#         config:
+#           scrape_configs:
+
+#             # Scrape ALL kube-state-metrics (NO filtering)
+#             - job_name: 'kube-state-metrics'
+#               scrape_interval: 60s
+#               static_configs:
+#                 - targets:
+#                     - kube-state-metrics.kube-system.svc.cluster.local:8080
+#             # - job_name: "kube-state-metrics"
+#             #   scrape_interval: 60s
+#             #   kubernetes_sd_configs:
+#             #     - role: endpoints
+#             #   relabel_configs:
+#             #     - source_labels: [__meta_kubernetes_service_name]
+#             #       action: keep
+#             #       regex: kube-state-metrics
+
+#     processors:
+#       batch:
+#         send_batch_size: 50
+#         timeout: 10s
+
+#     exporters:
+#       otlp_grpc:
+#         endpoint: 192.168.49.1:11800
+#         tls:
+#           insecure: true
+#         timeout: 120s
+
+#     service:
+#       pipelines:
+#         metrics:
+#           receivers: [prometheus]
+#           processors: [batch]
+#           exporters: [otlp_grpc]
+
+
+
+
+
+
+
+
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-collector-conf
+  namespace: default
+
+data:
+  otel-collector-config: |
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-collector-conf
+  namespace: default
+data:
+  otel-collector-config: |
+    receivers:
+      prometheus:
+        config:
+          scrape_configs:
+            - job_name: 'kube-state-metrics'
+              scrape_interval: 30s
+              static_configs:
+                - targets: ['kube-state-metrics.kube-system.svc.cluster.local:8080']
+              relabel_configs:
+                # SkyWalking needs this exact label to group metrics
+                - target_label: cluster
+                  replacement: k8s-cluster
+
+    processors:
+      # This adds pod_name, node_name etc. to your metrics
+      k8sattributes:
+        extract:
+          metadata:
+            - k8s.pod.name
+            - k8s.node.name
+            - k8s.namespace.name
+        passthrough: false
+      
+      batch:
+        send_batch_size: 1000
+        timeout: 120s
+
+    exporters:
+      otlp_grpc:
+        endpoint: 192.168.49.1:11800
+        tls:
+          insecure: true
+        timeout: 30s
+
+    service:
+      pipelines:
+        metrics:
+          receivers: [prometheus]
+          processors: [k8sattributes, batch]
+          exporters: [otlp_grpc]

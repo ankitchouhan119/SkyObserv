@@ -1,0 +1,111 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: skywalking-oap
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: skywalking-oap
+  template:
+    metadata:
+      labels:
+        app: skywalking-oap
+    spec:
+      serviceAccountName: skywalking-oap
+      containers:
+      - name: oap
+        image: apache/skywalking-oap-server:10.0.0
+        resources:
+          requests:
+            memory: "400Mi"
+            cpu: "100m"
+          limits:
+            memory: "700Mi"
+            cpu: "500m"
+        env:
+        - name: JAVA_OPTS
+          value: "-Xms256m -Xmx512m -XX:MaxMetaspaceSize=128m"
+        - name: SW_STORAGE
+          value: elasticsearch
+        - name: SW_STORAGE_ES_CLUSTER_NODES
+          value: "elasticsearch.default.svc.cluster.local:9200"
+        - name: SW_OTEL_RECEIVER
+          value: default
+        - name: SW_OTEL_RECEIVER_ENABLED_HANDLERS
+          value: "otlp-metrics"
+        - name: SW_OTEL_RECEIVER_ENABLED_OTEL_METRICS_RULES
+          value: "k8s/*"
+        - name: SW_CLUSTER
+          value: standalone
+        - name: SW_TELEMETRY
+          value: none
+        - name: SW_HEALTH_CHECKER
+          value: default
+        ports:
+        - containerPort: 11800
+          name: grpc
+        - containerPort: 12800
+          name: http
+        volumeMounts:
+        - name: otel-rules
+          mountPath: /skywalking/config/otel-rules/k8s
+        readinessProbe:
+          httpGet:
+            path: /healthcheck
+            port: 12800
+          initialDelaySeconds: 60
+          periodSeconds: 20
+      volumes:
+      - name: otel-rules
+        configMap:
+          name: skywalking-otel-rules
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: oap
+  namespace: default
+spec:
+  selector:
+    app: skywalking-oap
+  ports:
+  - name: grpc
+    port: 11800
+    nodePort: 30964
+  - name: http
+    port: 12800
+    nodePort: 30966
+  type: NodePort
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: skywalking-oap
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: skywalking-oap
+rules:
+- apiGroups: [""]
+  resources: ["pods", "services", "endpoints", "nodes"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["apps"]
+  resources: ["replicasets", "deployments"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: skywalking-oap
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: skywalking-oap
+subjects:
+- kind: ServiceAccount
+  name: skywalking-oap
+  namespace: default

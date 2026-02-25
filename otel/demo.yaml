@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-app-crash
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: demo-app-crash
+  template:
+    metadata:
+      labels:
+        app: demo-app-crash
+    spec:
+      containers:
+        - name: nginx
+          image: nginx-wwwwwwww
+          ports:
+            - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-svc-crash
+spec:
+  type: ClusterIP
+  selector:
+    app: demo-app-crash
+  ports:
+    - port: 80
+      targetPort: 80

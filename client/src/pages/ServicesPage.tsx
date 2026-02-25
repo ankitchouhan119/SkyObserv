@@ -25,7 +25,7 @@ export default function ServicesPage() {
   });
 
   const realServices = (servicesData?.getAllServices || []).filter((s: any) => {
-    const isDb = s.layers?.some((l: string) => l.includes('DATABASE') || l.includes('CACHE'));
+    const isDb = s.layers?.some((l: string) => l.includes('DATABASE') || l.includes('CACHE') );
     return !isDb
   });
 
