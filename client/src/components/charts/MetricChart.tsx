@@ -8,7 +8,6 @@ import {
   CartesianGrid,
   Tooltip,
 } from 'recharts';
-import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface MetricChartProps {
@@ -19,98 +18,108 @@ interface MetricChartProps {
   loading?: boolean;
 }
 
-export function MetricChart({ title, data, unit = '', color = '#3b82f6', loading }: MetricChartProps) {
-
+export function MetricChart({ title, data, unit = '', color = '#2563EB', loading }: MetricChartProps) {
   const formattedData = data.map((item) => {
-  const rawId = String(item.id || "");
-  let timeLabel = "N/A";
-  let fullLabel = "N/A";
+    const rawId = String(item.id || "");
+    let timeLabel = "N/A";
+    let fullLabel = "N/A";
 
-  // 10 digits (Hour) and 12 digits (Minute) match
-  const timestampMatch = rawId.match(/\d{10,12}/);
-  
-  if (timestampMatch) {
-    const ts = timestampMatch[0];
-    try {
-      const yyyy = Number(ts.substring(0, 4));
-      const month = Number(ts.substring(4, 6)) - 1;
-      const dd = Number(ts.substring(6, 8));
-      const hh = Number(ts.substring(8, 10));
-      // Minute when length is 12
-      const mm = ts.length >= 12 ? Number(ts.substring(10, 12)) : 0;
+    const timestampMatch = rawId.match(/\d{10,12}/);
 
-      const utcDate = new Date(Date.UTC(yyyy, month, dd, hh, mm));
+    if (timestampMatch) {
+      const ts = timestampMatch[0];
+      try {
+        const yyyy = Number(ts.substring(0, 4));
+        const month = Number(ts.substring(4, 6)) - 1;
+        const dd = Number(ts.substring(6, 8));
+        const hh = Number(ts.substring(8, 10));
+        const mm = ts.length >= 12 ? Number(ts.substring(10, 12)) : 0;
 
-      if (!isNaN(utcDate.getTime())) {
-        // IST (Local) Time conversion
-        timeLabel = utcDate.toLocaleTimeString('en-IN', {
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false,
-        });
+        const utcDate = new Date(Date.UTC(yyyy, month, dd, hh, mm));
 
-        fullLabel = utcDate.toLocaleString('en-IN', {
-          day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false
-        });
+        if (!isNaN(utcDate.getTime())) {
+          timeLabel = utcDate.toLocaleTimeString('en-IN', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+          });
 
-        // If date range and new day starts, then show date
-        if (ts.length === 10 && hh === 0) {
-          timeLabel = utcDate.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+          fullLabel = utcDate.toLocaleString('en-IN', {
+            day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false,
+          });
+
+          if (ts.length === 10 && hh === 0) {
+            timeLabel = utcDate.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+          }
         }
+      } catch {
+        timeLabel = ts.slice(-4);
       }
-    } catch (e) {
-      timeLabel = ts.slice(-4); 
     }
+
+    return { time: timeLabel, fullTime: fullLabel, value: item.value };
+  });
+
+  if (loading) {
+    return (
+      <div className="so-card p-5">
+        <Skeleton className="h-4 w-24 mb-4" />
+        <Skeleton className="h-[200px] w-full" />
+      </div>
+    );
   }
 
-  return { time: timeLabel, fullTime: fullLabel, value: item.value };
-});
   return (
-    <Card className="p-6 border-white/5 bg-card/50 shadow-sm">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-sm font-medium text-muted-foreground uppercase font-bold">{title}</h3>
-        <span className="text-2xl font-bold font-mono text-white">
+    <div className="so-card p-5">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{title}</h3>
+        <span className="text-2xl font-semibold font-mono text-foreground tabular-nums">
           {data.length > 0 ? data[data.length - 1].value.toLocaleString() : 0}
           <span className="text-sm font-normal text-muted-foreground ml-1">{unit}</span>
         </span>
       </div>
-      
+
       <div className="h-[200px] w-full">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={formattedData}>
             <defs>
               <linearGradient id={`gradient-${title.replace(/\s+/g, '-')}`} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={color} stopOpacity={0.3}/>
-                <stop offset="95%" stopColor={color} stopOpacity={0}/>
+                <stop offset="5%" stopColor={color} stopOpacity={0.2} />
+                <stop offset="95%" stopColor={color} stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
-            <XAxis 
-              dataKey="time" 
-              stroke="rgba(255,255,255,0.4)" 
-              fontSize={10} 
-              tickLine={false} 
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+            <XAxis
+              dataKey="time"
+              stroke="hsl(var(--muted-foreground))"
+              fontSize={10}
+              tickLine={false}
               axisLine={false}
-              minTickGap={40} // Space for Date labels
+              minTickGap={40}
               interval="preserveStartEnd"
             />
-            <YAxis hide={false} stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} axisLine={false} />
+            <YAxis hide={false} stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} />
             <Tooltip
               labelFormatter={(label, payload) => payload[0]?.payload?.fullTime || label}
-              contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '12px' }}
+              contentStyle={{
+                backgroundColor: 'hsl(var(--card))',
+                borderColor: 'hsl(var(--border))',
+                borderRadius: '8px',
+                fontSize: '12px',
+              }}
             />
-            <Area 
-              type="monotone" 
-              dataKey="value" 
-              stroke={color} 
-              strokeWidth={2.5}
-              fillOpacity={1} 
+            <Area
+              type="monotone"
+              dataKey="value"
+              stroke={color}
+              strokeWidth={2}
+              fillOpacity={1}
               fill={`url(#gradient-${title.replace(/\s+/g, '-')})`}
-              connectNulls={true} 
+              connectNulls
             />
           </AreaChart>
         </ResponsiveContainer>
       </div>
-    </Card>
+    </div>
   );
 }

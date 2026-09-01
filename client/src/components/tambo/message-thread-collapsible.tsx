@@ -17,78 +17,21 @@ import {
   ThreadContent,
   ThreadContentMessages,
 } from "./thread-content";
-import { ThreadDropdown } from "./thread-dropdown";
 import { ScrollableMessageContainer } from "./scrollable-message-container";
 import { cn } from "@/lib/utils";
 import { Collapsible } from "radix-ui";
-import { Activity, XIcon } from "lucide-react";
+import { Sparkles, XIcon } from "lucide-react";
 import * as React from "react";
 import { type VariantProps } from "class-variance-authority";
 import type { Suggestion } from "@tambo-ai/react";
 
-/**
- * Props for the MessageThreadCollapsible component
- * @interface
- * @extends React.HTMLAttributes<HTMLDivElement>
- */
 export interface MessageThreadCollapsibleProps
   extends React.HTMLAttributes<HTMLDivElement> {
-  /** Optional context key for the thread */
   contextKey?: string;
-  /** Whether the collapsible should be open by default (default: false) */
   defaultOpen?: boolean;
-  /**
-   * Controls the visual styling of messages in the thread.
-   * Possible values include: "default", "compact", etc.
-   * These values are defined in messageVariants from "@/components/ui/message".
-   * @example variant="compact"
-   */
   variant?: VariantProps<typeof messageVariants>["variant"];
 }
 
-/**
- * A collapsible chat thread component with keyboard shortcuts and thread management
- * @component
- * @example
- * ```tsx
- * <MessageThreadCollapsible
- *   contextKey="my-thread"
- *   defaultOpen={false}
- *   className="left-4" // Position on the left instead of right
- *   variant="default"
- * />
- * ```
- */
-
-/**
- * Custom hook for managing collapsible state with keyboard shortcuts
- */
-// const useCollapsibleState = (defaultOpen = false) => {
-//   const [isOpen, setIsOpen] = React.useState(defaultOpen);
-//   const isMac =
-//     typeof navigator !== "undefined" && navigator.platform.startsWith("Mac");
-//   const shortcutText = isMac ? "⌘K" : "Ctrl+K";
-
-//   React.useEffect(() => {
-//     const handleKeyDown = (event: KeyboardEvent) => {
-//       if ((event.metaKey || event.ctrlKey) && event.key === "k") {
-//         event.preventDefault();
-//         setIsOpen((prev) => !prev);
-//       }
-//     };
-
-//     document.addEventListener("keydown", handleKeyDown);
-//     return () => document.removeEventListener("keydown", handleKeyDown);
-//   }, []);
-
-//   return { isOpen, setIsOpen, shortcutText };
-// };
-
-
-
-/**
- * Custom hook for managing collapsible state with keyboard shortcuts and persistence
- */
 const useCollapsibleState = (defaultOpen = false) => {
   const [isOpen, setIsOpen] = React.useState(() => {
     if (typeof window !== "undefined") {
@@ -121,109 +64,79 @@ const useCollapsibleState = (defaultOpen = false) => {
   return { isOpen, setIsOpen, shortcutText };
 };
 
-
-/**
- * Props for the CollapsibleContainer component
- */
-interface CollapsibleContainerProps
-  extends React.HTMLAttributes<HTMLDivElement> {
+interface CollapsibleContainerProps extends React.HTMLAttributes<HTMLDivElement> {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   children: React.ReactNode;
 }
 
-// bg-gradient-to-r from-slate-100 to-blue-200
-
-/**
- * Container component for the collapsible panel
- */
-const CollapsibleContainer = React.forwardRef<
-  HTMLDivElement,
-  CollapsibleContainerProps
->(({ className, isOpen, onOpenChange, children, ...props }, ref) => (
-  <Collapsible.Root
-    ref={ref}
-    open={isOpen}
-    onOpenChange={onOpenChange}
-    className={cn(
-      "fixed bottom-4 right-4 w-full max-w-sm sm:max-w-md md:max-w-lg rounded-lg shadow-lg bg-gradient-to-br from-gray-900 to-blue-900 border border-blue-900",
-      "transition-all duration-300 ease-in-out z-50 opacity-100",
-      className,
-    )}
-    {...props}
-  >
-    {children}
-  </Collapsible.Root>
-));
+const CollapsibleContainer = React.forwardRef<HTMLDivElement, CollapsibleContainerProps>(
+  ({ className, isOpen, onOpenChange, children, ...props }, ref) => (
+    <Collapsible.Root
+      ref={ref}
+      open={isOpen}
+      onOpenChange={onOpenChange}
+      className={cn(
+        "fixed bottom-5 right-5 z-50 transition-all duration-300 ease-out",
+        isOpen
+          ? "w-[min(calc(100vw-2.5rem),24rem)] rounded-xl so-card shadow-xl border-border"
+          : "w-auto",
+        className,
+      )}
+      {...props}
+    >
+      {children}
+    </Collapsible.Root>
+  ),
+);
 CollapsibleContainer.displayName = "CollapsibleContainer";
 
-// bg-background
-
-/**
- * Props for the CollapsibleTrigger component
- */
 interface CollapsibleTriggerProps {
   isOpen: boolean;
   shortcutText: string;
   onClose: () => void;
-  contextKey?: string;
-  onThreadChange: () => void;
-  config: {
-    labels: {
-      openState: string;
-      closedState: string;
-    };
-  };
 }
 
-/**
- * Trigger component for the collapsible panel
- */
 const CollapsibleTrigger = ({
   isOpen,
   shortcutText,
   onClose,
-  contextKey,
-  onThreadChange,
-  config,
 }: CollapsibleTriggerProps) => (
   <>
     {!isOpen && (
       <Collapsible.Trigger asChild>
         <button
           className={cn(
-            "flex items-center justify-between w-full p-4",
-            "hover:bg-muted/50 transition-colors",
+            "flex items-center gap-2 h-10 pl-3 pr-2.5 rounded-full",
+            "so-card text-sm font-medium text-foreground",
+            "hover:border-primary/30 hover:shadow-md transition-all duration-200 cursor-pointer",
           )}
           aria-expanded={isOpen}
           aria-controls="message-thread-content"
         >
-          <span>{config.labels.closedState}</span>
-          <span
-            className="text-xs text-muted-foreground pl-8"
-            suppressHydrationWarning
-          >
-            {`(${shortcutText})`}
+          <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/15">
+            <Sparkles className="h-3.5 w-3.5 text-primary" />
           </span>
+          <span>Ask AI</span>
+          <kbd className="hidden sm:inline-flex items-center rounded border border-border/80 bg-background/60 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+            {shortcutText}
+          </kbd>
         </button>
       </Collapsible.Trigger>
     )}
     {isOpen && (
-      <div className="flex items-center justify-between w-full p-4">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center shadow-lg">
-            {config.icon}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border/60 bg-card/95">
+        <div className="flex items-center gap-2.5">
+          <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary/15">
+            <Sparkles className="h-4 w-4 text-primary" />
+          </span>
+          <div>
+            <p className="text-sm font-semibold leading-none">AI Assistant</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">Ask about your services</p>
           </div>
-
-          <span>{config.labels.openState}</span>
-
-          {/* <ThreadDropdown
-            contextKey={contextKey}
-            onThreadChange={onThreadChange}
-          /> */}
         </div>
         <button
-          className="p-1 rounded-full hover:bg-muted/70 transition-colors cursor-pointer"
+          className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
           onClick={(e) => {
             e.stopPropagation();
             onClose();
@@ -244,41 +157,26 @@ export const MessageThreadCollapsible = React.forwardRef<
 >(({ className, contextKey, defaultOpen = false, variant, ...props }, ref) => {
   const { isOpen, setIsOpen, shortcutText } = useCollapsibleState(defaultOpen);
 
-  const handleThreadChange = React.useCallback(() => {
-    setIsOpen(true);
-  }, [setIsOpen]);
-
-  /**
-   * Configuration for the MessageThreadCollapsible component
-   */
-  const THREAD_CONFIG = {
-    labels: {
-      openState: "SkyObserv",
-      closedState: "Start chatting with SkyObserv",
+  const defaultSuggestions: Suggestion[] = [
+    {
+      id: "s-1",
+      title: "Check Service Health",
+      detailedSuggestion: "Show me the health status of all running services.",
+      messageId: "health-check",
     },
-    icon: <Activity className="h-5 w-5 text-white" />
-  };
-
-const defaultSuggestions: Suggestion[] = [
-  {
-    id: "s-1",
-    title: "Check Service Health",
-    detailedSuggestion: "Show me the health status of all running services.",
-    messageId: "health-check",
-  },
-  {
-    id: "s-2",
-    title: "Show Abnormal Traces",
-    detailedSuggestion: "List all traces that have errors or high latency in the last hour.",
-    messageId: "trace-check",
-  },
-  {
-    id: "s-3",
-    title: "View Global Topology",
-    detailedSuggestion: "Render the dependency graph for the entire system.",
-    messageId: "topo-check",
-  },
-];
+    {
+      id: "s-2",
+      title: "Show Abnormal Traces",
+      detailedSuggestion: "List all traces that have errors or high latency in the last hour.",
+      messageId: "trace-check",
+    },
+    {
+      id: "s-3",
+      title: "View Global Topology",
+      detailedSuggestion: "Render the dependency graph for the entire system.",
+      messageId: "topo-check",
+    },
+  ];
 
   return (
     <CollapsibleContainer
@@ -292,26 +190,24 @@ const defaultSuggestions: Suggestion[] = [
         isOpen={isOpen}
         shortcutText={shortcutText}
         onClose={() => setIsOpen(false)}
-        contextKey={contextKey}
-        onThreadChange={handleThreadChange}
-        config={THREAD_CONFIG}
       />
       <Collapsible.Content>
-        <div className="h-[700px] flex flex-col">
-          {/* Message thread content */}
-          <ScrollableMessageContainer className="p-4">
+        <div className="h-[min(70vh,32rem)] flex flex-col bg-card">
+          <ScrollableMessageContainer className="p-3 flex-1">
             <ThreadContent variant={variant}>
               <ThreadContentMessages />
             </ThreadContent>
           </ScrollableMessageContainer>
 
-          {/* Message Suggestions Status */}
           <MessageSuggestions>
             <MessageSuggestionsStatus />
           </MessageSuggestions>
 
-          {/* Message input */}
-          <div className="p-4">
+          <MessageSuggestions initialSuggestions={defaultSuggestions} autoRefresh={true}>
+            <MessageSuggestionsList />
+          </MessageSuggestions>
+
+          <div className="p-3 border-t border-border/60 bg-card/95">
             <MessageInput contextKey={contextKey}>
               <MessageInputTextarea />
               <MessageInputToolbar>
@@ -320,11 +216,6 @@ const defaultSuggestions: Suggestion[] = [
               <MessageInputError />
             </MessageInput>
           </div>
-
-          {/* Message suggestions */}
-          <MessageSuggestions initialSuggestions={defaultSuggestions} autoRefresh={true}>
-            <MessageSuggestionsList />
-          </MessageSuggestions>
         </div>
       </Collapsible.Content>
     </CollapsibleContainer>

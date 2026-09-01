@@ -159,12 +159,16 @@ navigate_to_page({
 
 **getServiceMetrics:**
 - ALWAYS pass startDate and endDate in "YYYY-MM-DD HHmm" format (UTC timezone)
-- Returns latency, throughput, SLA
+- Returns latency, throughput, SLA, status, and normalStatus from SkyWalking
+- NEVER mark a service critical only because latency/throughput/SLA are 0
+- If normalStatus is NORMAL, status must be healthy even with zero metrics (service may be idle)
+- For "health of all services", prefer getServices + ServiceListCard instead
 - ALWAYS call navigate_to_page immediately after
 - Example: getServiceMetrics({ serviceId: "payment-service", startDate: "2026-02-07 0549", endDate: "2026-02-07 1149" })
 
 **getServices:**
-- Fetch all services and their basic health
+- Fetch all services and their basic health (normalStatus: NORMAL / ABNORMAL)
+- Use ServiceListCard when user asks for health of all running services
 - No date range needed (uses default last 1 hour)
 
 **getTopology:**

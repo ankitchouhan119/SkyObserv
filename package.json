@@ -8,10 +8,13 @@
     "db:push": "drizzle-kit push",
     "dev": "NODE_ENV=development tsx server/index.ts",
     "build": "vite build",
-    "start": "NODE_ENV=production tsx server/index.ts"
+    "start": "NODE_ENV=production tsx server/index.ts",
+    "graphify:update": "graphify update .",
+    "graphify:watch": "graphify watch ."
   },
   "dependencies": {
     "@apollo/client": "^3.8.8",
+    "@getbrevo/brevo": "^6.0.3",
     "@hookform/resolvers": "^3.10.0",
     "@jridgewell/trace-mapping": "^0.3.25",
     "@radix-ui/react-accordion": "^1.2.4",

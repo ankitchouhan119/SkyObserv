@@ -18,7 +18,7 @@ export default function NotFound() {
           </p>
 
           <div className="mt-8">
-            <Link href="/">
+            <Link href="/dashboard">
               <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
                 Return to Dashboard
               </Button>

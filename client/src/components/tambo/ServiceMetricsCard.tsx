@@ -3,36 +3,82 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Activity, Zap, CheckCircle } from "lucide-react";
 
-export const ServiceMetricsCard = (props: any) => {
-  // AI props handle
-  const data = props.args || props;
-  const { serviceName, latency, throughput, sla, status = "healthy", insight } = data;
+function resolveDisplayStatus(
+  status?: string,
+  normalStatus?: string,
+): { key: string; label: string; style: string } {
+  if (normalStatus === "NORMAL" || status === "healthy") {
+    return {
+      key: "healthy",
+      label: "Normal",
+      style: "text-primary bg-primary/10 border-primary/20",
+    };
+  }
+  if (normalStatus === "ABNORMAL" || status === "critical") {
+    return {
+      key: "critical",
+      label: "Abnormal",
+      style: "text-rose-400 bg-rose-500/10 border-rose-500/20",
+    };
+  }
+  if (status === "degraded") {
+    return {
+      key: "degraded",
+      label: "Unknown",
+      style: "text-amber-400 bg-amber-500/10 border-amber-500/20",
+    };
+  }
+  return {
+    key: "healthy",
+    label: "Normal",
+    style: "text-primary bg-primary/10 border-primary/20",
+  };
+}
 
-  const statusStyle = status === "critical" ? "text-red-500 bg-red-500/10 border-red-500/20" : 
-                      status === "degraded" ? "text-yellow-500 bg-yellow-500/10 border-yellow-500/20" : 
-                      "text-green-500 bg-green-500/10 border-green-500/20";
+export const ServiceMetricsCard = (props: Record<string, unknown> & { args?: Record<string, unknown> }) => {
+  const data = (props.args || props) as {
+    serviceName?: string;
+    latency?: number | string;
+    throughput?: number | string;
+    sla?: number | string;
+    status?: string;
+    normalStatus?: string;
+    insight?: string;
+  };
+  const { serviceName, latency, throughput, sla, status, normalStatus, insight } = data;
+  const display = resolveDisplayStatus(status, normalStatus);
 
   return (
-    <Card className="p-5 bg-[#111] border-white/10 shadow-2xl my-3 border-l-4 border-l-primary">
-      <div className="flex justify-between items-start mb-4">
-        <div>
-          <h3 className="text-lg font-bold text-white">{serviceName}</h3>
-          {insight && <p className="text-xs text-muted-foreground mt-2 italic leading-relaxed">"{insight}"</p>}
+    <Card className="p-3.5 border-border/60 bg-card/90 my-2">
+      <div className="flex justify-between items-start gap-3 mb-3">
+        <div className="min-w-0">
+          <h3 className="text-sm font-semibold text-foreground truncate">{serviceName}</h3>
+          {insight && (
+            <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">{insight}</p>
+          )}
         </div>
-        <Badge className={`${statusStyle} font-bold text-[10px]`}>{status.toUpperCase()}</Badge>
+        <Badge variant="outline" className={`${display.style} font-medium text-[10px] shrink-0`}>
+          {display.label}
+        </Badge>
       </div>
-      <div className="grid grid-cols-3 gap-2 py-3 border-t border-white/5">
-        <div className="flex flex-col gap-1 text-center">
-          <span className="text-[9px] text-muted-foreground uppercase flex items-center justify-center gap-1"><Activity className="w-3 h-3" /> Latency</span>
-          <span className="text-sm font-mono text-white font-bold">{latency}ms</span>
+      <div className="grid grid-cols-3 gap-2 pt-3 border-t border-border/50">
+        <div className="text-center">
+          <span className="text-[10px] text-muted-foreground uppercase flex items-center justify-center gap-1">
+            <Activity className="w-3 h-3" /> Latency
+          </span>
+          <span className="text-xs font-mono font-semibold mt-0.5 block">{latency}ms</span>
         </div>
-        <div className="flex flex-col gap-1 text-center">
-          <span className="text-[9px] text-muted-foreground uppercase flex items-center justify-center gap-1"><Zap className="w-3 h-3" /> Traffic</span>
-          <span className="text-sm font-mono text-white font-bold">{throughput}</span>
+        <div className="text-center">
+          <span className="text-[10px] text-muted-foreground uppercase flex items-center justify-center gap-1">
+            <Zap className="w-3 h-3" /> Traffic
+          </span>
+          <span className="text-xs font-mono font-semibold mt-0.5 block">{throughput}</span>
         </div>
-        <div className="flex flex-col gap-1 text-center">
-          <span className="text-[9px] text-muted-foreground uppercase flex items-center justify-center gap-1"><CheckCircle className="w-3 h-3" /> SLA</span>
-          <span className="text-sm font-mono text-white font-bold">{sla}%</span>
+        <div className="text-center">
+          <span className="text-[10px] text-muted-foreground uppercase flex items-center justify-center gap-1">
+            <CheckCircle className="w-3 h-3" /> SLA
+          </span>
+          <span className="text-xs font-mono font-semibold mt-0.5 block">{sla}%</span>
         </div>
       </div>
     </Card>
