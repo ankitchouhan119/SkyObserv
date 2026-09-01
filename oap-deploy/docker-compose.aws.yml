@@ -1,10 +1,11 @@
-# SkyWalking OAP — AWS EC2 + Aiven OpenSearch (persistent storage)
+# SkyWalking OAP — AWS EC2 + Aiven OpenSearch
 #
-# Setup on EC2:
-#   cp .env.example .env    # fill OpenSearch credentials
+# Requires t3.medium (4 GB RAM) for OpenSearch-backed OAP.
+# t3.small (2 GB) will OOM on Metaspace — do not use.
+#
+# Setup:
+#   cp .env.example .env
 #   docker compose -f docker-compose.aws.yml up -d
-#
-# Requires t3.small (2 GB RAM) minimum.
 
 services:
   oap:
@@ -21,19 +22,21 @@ services:
       SW_NAMESPACE: skywalking
       SW_HEALTH_CHECKER: default
       SW_TELEMETRY: none
-      SW_CORE_GRPC_THREAD_POOL_SIZE: 4
-      SW_CORE_REST_THREAD_POOL_SIZE: 4
+      SW_CORE_GRPC_THREAD_POOL_SIZE: 2
+      SW_CORE_REST_THREAD_POOL_SIZE: 2
       JAVA_OPTS: >-
-        -Xms512m -Xmx1024m
-        -XX:MaxMetaspaceSize=128m
+        -Xms768m -Xmx1536m
+        -XX:MaxMetaspaceSize=384m
+        -XX:CompressedClassSpaceSize=128m
         -XX:+UseSerialGC
+        -XX:TieredStopAtLevel=1
     ports:
       - "11800:11800"
       - "12800:12800"
-    mem_limit: 1536m
+    mem_limit: 2800m
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:12800/graphql || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 120s
+      start_period: 180s

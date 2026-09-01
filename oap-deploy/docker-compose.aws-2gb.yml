@@ -1,5 +1,5 @@
-# Same as docker-compose.aws.yml — alias for t3.small (2 GB)
-# Usage: docker compose -f docker-compose.aws-2gb.yml up -d
+# SkyWalking OAP — t3.small (2 GB) — tight, may still struggle with OpenSearch
+# Prefer t3.medium + docker-compose.aws.yml
 
 services:
   oap:
@@ -16,19 +16,21 @@ services:
       SW_NAMESPACE: skywalking
       SW_HEALTH_CHECKER: default
       SW_TELEMETRY: none
-      SW_CORE_GRPC_THREAD_POOL_SIZE: 4
-      SW_CORE_REST_THREAD_POOL_SIZE: 4
+      SW_CORE_GRPC_THREAD_POOL_SIZE: 2
+      SW_CORE_REST_THREAD_POOL_SIZE: 2
       JAVA_OPTS: >-
-        -Xms512m -Xmx1024m
-        -XX:MaxMetaspaceSize=128m
+        -Xms384m -Xmx768m
+        -XX:MaxMetaspaceSize=256m
+        -XX:CompressedClassSpaceSize=64m
         -XX:+UseSerialGC
+        -XX:TieredStopAtLevel=1
     ports:
       - "11800:11800"
       - "12800:12800"
-    mem_limit: 1536m
+    mem_limit: 1400m
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:12800/graphql || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 120s
+      start_period: 180s
