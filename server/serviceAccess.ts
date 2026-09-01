@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import type { Request } from "express";
 import { db } from "./db";
 import { serviceRegistrations, skyobservUsers, type SkyobservUser } from "@shared/schema";
@@ -63,4 +63,58 @@ export async function registerServiceForToken(
   }
 
   return { userId: user.id, email: user.email };
+}
+
+export async function unregisterServiceForUser(
+  user: SkyobservUser,
+  serviceName: string,
+): Promise<{ ok: true } | { error: string }> {
+  if (user.invitedByUserId) {
+    return { error: "Only the account owner can remove linked services" };
+  }
+
+  const ownerId = getAccountOwnerId(user);
+  const normalized = serviceName.trim();
+  if (!normalized) {
+    return { error: "Service name is required" };
+  }
+
+  const rows = await db
+    .delete(serviceRegistrations)
+    .where(
+      and(
+        eq(serviceRegistrations.userId, ownerId),
+        eq(serviceRegistrations.serviceName, normalized),
+      ),
+    )
+    .returning({ id: serviceRegistrations.id });
+
+  if (rows.length === 0) {
+    return { error: "Service not found" };
+  }
+
+  return { ok: true };
+}
+
+export async function unregisterServiceByIdForUser(
+  user: SkyobservUser,
+  registrationId: number,
+): Promise<{ ok: true } | { error: string }> {
+  if (user.invitedByUserId) {
+    return { error: "Only the account owner can remove linked services" };
+  }
+
+  const ownerId = getAccountOwnerId(user);
+  const rows = await db
+    .delete(serviceRegistrations)
+    .where(
+      and(eq(serviceRegistrations.userId, ownerId), eq(serviceRegistrations.id, registrationId)),
+    )
+    .returning({ id: serviceRegistrations.id });
+
+  if (rows.length === 0) {
+    return { error: "Service not found" };
+  }
+
+  return { ok: true };
 }

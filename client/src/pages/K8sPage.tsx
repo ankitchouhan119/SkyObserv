@@ -141,7 +141,16 @@ export default function K8sPage() {
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
-          {clusters.map((cluster: any) => {
+          {clusters.length === 0 ? (
+            <div className="so-card col-span-full flex flex-col items-center justify-center py-16 text-center">
+              <Box className="w-10 h-10 text-muted-foreground/30 mb-3" />
+              <p className="text-sm font-medium text-foreground">No Kubernetes clusters detected</p>
+              <p className="text-xs text-muted-foreground mt-1 max-w-md">
+                Clusters appear here after your account is connected to a K8s environment with the
+                SkyWalking collector. New accounts only see infrastructure linked to their own services.
+              </p>
+            </div>
+          ) : clusters.map((cluster: any) => {
             const maxClusterPods = (metrics.activeNodes || 1) * 110;
             const podSaturationP = Math.round(((metrics.activePods || 0) / maxClusterPods) * 100);
             const isCritical = metrics.cpuPercent >= 90;

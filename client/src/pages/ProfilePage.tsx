@@ -34,6 +34,7 @@ import { toast } from "@/hooks/use-toast";
 import { AddStorageBackendDialog } from "@/components/storage/AddStorageBackendDialog";
 
 type RegisteredService = {
+  id: number;
   serviceName: string;
   serviceInstance?: string | null;
   lastSeenAt?: string | null;
@@ -319,6 +320,47 @@ export default function ProfilePage() {
     }
   }
 
+  async function removeService(service: RegisteredService) {
+    if (
+      !window.confirm(
+        `Remove "${service.serviceName}" from your account? Your app can link again on the next register call.`,
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/profile/services/unlink", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: service.id,
+          serviceName: service.serviceName,
+        }),
+      });
+      const contentType = res.headers.get("content-type") ?? "";
+      const data = contentType.includes("application/json")
+        ? await res.json()
+        : null;
+      if (!res.ok || !data?.ok) {
+        throw new Error(data?.message || "Could not remove service");
+      }
+
+      loadData();
+      toast({
+        title: "Service removed",
+        description: "It may reappear if your app registers again on startup.",
+      });
+    } catch (err) {
+      toast({
+        title: "Remove failed",
+        description: err instanceof Error ? err.message : "Could not remove service",
+        variant: "destructive",
+      });
+    }
+  }
+
   async function removeStorageBackend(backend: ConfiguredStorage) {
     const numericId = backend.id.replace(/^cfg:/, "");
     try {
@@ -519,19 +561,25 @@ export default function ProfilePage() {
             <div className="space-y-2">
               {services.map((service) => (
                 <div
-                  key={service.serviceName}
-                  className="flex items-center justify-between rounded-lg border border-border/60 px-4 py-3"
+                  key={service.id}
+                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-lg border border-border/60 px-4 py-3"
                 >
-                  <div>
+                  <div className="min-w-0">
                     <p className="font-medium text-foreground">{service.serviceName}</p>
                     {service.serviceInstance && (
                       <p className="text-xs text-muted-foreground">{service.serviceInstance}</p>
                     )}
+                    {service.lastSeenAt && (
+                      <p className="text-[11px] text-muted-foreground mt-1">
+                        Last seen {new Date(service.lastSeenAt).toLocaleString()}
+                      </p>
+                    )}
                   </div>
-                  {service.lastSeenAt && (
-                    <p className="text-xs text-muted-foreground">
-                      Last seen {new Date(service.lastSeenAt).toLocaleString()}
-                    </p>
+                  {isOwner && (
+                    <Button variant="ghost" size="sm" onClick={() => removeService(service)}>
+                      <Trash2 className="w-4 h-4 mr-1" />
+                      Remove
+                    </Button>
                   )}
                 </div>
               ))}

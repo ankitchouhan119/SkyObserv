@@ -540,8 +540,8 @@
     "semantic_hash": ""
   },
   "client/src/pages/K8sPage.tsx": {
-    "mtime": 1788285597.055204,
-    "ast_hash": "1b00e0b6c247899afeb9c01ed8c8ca38",
+    "mtime": 1788290318.1348913,
+    "ast_hash": "9aa4b067a3e3c73870f6729649c468d3",
     "semantic_hash": ""
   },
   "client/src/pages/K8sPodDetailPage.tsx": {
@@ -560,8 +560,8 @@
     "semantic_hash": ""
   },
   "client/src/pages/TopologyPage.tsx": {
-    "mtime": 1788288007.753972,
-    "ast_hash": "c05dd66239686cba94c5a85044be1dee",
+    "mtime": 1788288278.2304614,
+    "ast_hash": "cf75251f2ba79c4486cbf1e82cf7b01d",
     "semantic_hash": ""
   },
   "client/src/pages/TraceDetailPage.tsx": {
@@ -620,8 +620,8 @@
     "semantic_hash": ""
   },
   "server/index.ts": {
-    "mtime": 1788285597.042204,
-    "ast_hash": "ab3dd00da9c3237a3f487adb71849bb3",
+    "mtime": 1788290621.0830429,
+    "ast_hash": "14c83215e36b8e6ebcfb49e95c79ee67",
     "semantic_hash": ""
   },
   "server/vite.ts": {
@@ -770,8 +770,8 @@
     "semantic_hash": ""
   },
   "server/graphqlAccess.ts": {
-    "mtime": 1788285597.014204,
-    "ast_hash": "14023364ac5278c02288524c4bc4bbeb",
+    "mtime": 1788290307.6745572,
+    "ast_hash": "b9fee8871f5a567e4bee251bea82ccad",
     "semantic_hash": ""
   },
   "server/password.ts": {
@@ -785,13 +785,13 @@
     "semantic_hash": ""
   },
   "client/src/pages/ProfilePage.tsx": {
-    "mtime": 1788285597.0172038,
-    "ast_hash": "522ae24e71427cf680811f45ac6e8a08",
+    "mtime": 1788290633.5680666,
+    "ast_hash": "d1812d61d16fd6a7f9e29d7ce84361c9",
     "semantic_hash": ""
   },
   "server/serviceAccess.ts": {
-    "mtime": 1788285597.005204,
-    "ast_hash": "ee645e742a747ecb218f486bddbe28df",
+    "mtime": 1788290617.902689,
+    "ast_hash": "58ee7ee8e4ddebb43ff1aa9b0ed5bfe8",
     "semantic_hash": ""
   },
   "server/tokens.ts": {
