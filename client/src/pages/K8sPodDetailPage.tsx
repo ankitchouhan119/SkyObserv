@@ -3,7 +3,6 @@ import React, { useMemo, useState } from 'react';
 import { useParams, useLocation } from 'wouter';
 import { useQuery } from '@apollo/client';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { Card } from '@/components/ui/card';
 import { ArrowLeft, Box, Layers, Waypoints, Copy, Activity, Zap } from 'lucide-react';
 import { GET_INSTANCE_DETAIL, GET_MQE_METRICS } from '@/apollo/queries/kubernetes';
 import { useDurationStore } from '@/store/useDurationStore';
@@ -88,7 +87,7 @@ export default function K8sPodDetailPage() {
 
     if (activeResult) {
       const phase = activeResult.metric?.labels?.find((l: any) => l.key === 'phase')?.value || 'Running';
-      if (phase === 'Running') return { label: 'RUNNING', color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', glow: 'bg-emerald-400' };
+      if (phase === 'Running') return { label: 'RUNNING', color: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/20', glow: 'bg-primary' };
       if (phase === 'Pending') return { label: 'PENDING', color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20', glow: 'bg-amber-400' };
       return { label: phase.toUpperCase(), color: 'text-cyan-400', bg: 'bg-cyan-500/10', border: 'border-cyan-500/20', glow: 'bg-cyan-400' };
     }
@@ -100,72 +99,56 @@ export default function K8sPodDetailPage() {
 
   return (
     <AppLayout>
-      <div className="max-w-7xl mx-auto px-4 py-8 space-y-6 text-slate-200">
-        {/* Header */}
-        <div className="border-b border-white/10 pb-6 space-y-4">
-          <button onClick={() => setLocation(`/kubernetes/namespace/${name}`)} className="text-[10px] font-black text-muted-foreground flex items-center gap-1 uppercase hover:text-blue-400 transition-colors">
-            <ArrowLeft size={10} /> BACK TO {name}
+      <div className="so-page">
+        <div className="border-b border-border pb-5 space-y-4">
+          <button onClick={() => setLocation(`/kubernetes/namespace/${name}`)} className="text-sm text-muted-foreground flex items-center gap-1 hover:text-primary transition-colors">
+            <ArrowLeft size={14} /> Back to {name}
           </button>
           <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-blue-500/10 rounded-2xl border border-blue-500/20 shadow-lg">
-                <Box className="w-8 h-8 text-blue-400" />
+              <div className="so-icon-wrap bg-primary/10 text-primary w-12 h-12">
+                <Box className="w-6 h-6" />
               </div>
               <div>
-                <h1 className="text-3xl font-black text-white italic tracking-tighter truncate max-w-xl">{podDisplayName}</h1>
-                <div className="flex items-center gap-2 mt-1 font-black text-[10px]  tracking-widest text-muted-foreground">
-                  <span>ID: {instanceId}</span>
-                </div>
+                <h1 className="text-lg font-semibold text-foreground truncate max-w-xl" style={{ fontFamily: 'Outfit, sans-serif' }}>{podDisplayName}</h1>
+                <p className="text-xs text-muted-foreground mt-1">ID: {instanceId}</p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-               <div className={cn("px-4 py-1.5 rounded-full text-[10px] font-black italic uppercase tracking-widest border flex items-center gap-2 transition-all duration-500", theme.bg, theme.color, theme.border)}>
-                <span className="relative flex h-2 w-2">
-                  <span className={cn("animate-ping absolute inline-flex h-full w-full rounded-full opacity-75", theme.glow)}></span>
-                  <span className={cn("relative inline-flex rounded-full h-2 w-2", theme.glow)}></span>
-                </span>
-                {theme.label}
-              </div>
+            <div className={cn("px-3 py-1.5 rounded-full text-xs font-medium border flex items-center gap-2", theme.bg, theme.color, theme.border)}>
+              <span className={cn("w-2 h-2 rounded-full", theme.glow)} />
+              {theme.label}
             </div>
           </div>
-          <div className="flex gap-2 pt-2">
-            {(['overview', 'Connectivity', 'events'] as Tab[]).map(tab => (
-              <button key={tab} onClick={() => setActiveTab(tab)} className={cn('px-6 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all', activeTab === tab ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30 shadow-lg' : 'text-muted-foreground border border-transparent hover:bg-white/5')}>
-                {tab === 'Connectivity' ? '⚡ Connectivity' : tab === 'events' ? '🔔 Events' : '📊 Overview'}
+          <div className="flex gap-2">
+            {(['overview', 'Connectivity', 'events'] as Tab[]).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={cn(
+                  'px-4 py-2 text-xs font-medium rounded-lg transition-colors',
+                  activeTab === tab ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted',
+                )}
+              >
+                {tab === 'Connectivity' ? 'Connectivity' : tab === 'events' ? 'Events' : 'Overview'}
               </button>
             ))}
           </div>
         </div>
 
         {activeTab === 'overview' && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-              <Card className="p-5 bg-slate-900/40 border-white/5 group transition-all">
-                <div className="flex items-center gap-2 text-[9px] font-black text-muted-foreground uppercase tracking-widest mb-3"><Layers className="w-3.5 h-3.5 text-blue-400" /> Controller</div>
-                <p className="text-lg font-black text-white italic truncate group-hover:text-blue-400 transition-colors">{deploymentName}</p>
-                <p className="text-[8px] text-muted-foreground font-bold uppercase tracking-widest mt-1">Deployment</p>
-              </Card>
-              <Card className="p-5 bg-slate-900/40 border-white/5 group transition-all">
-                <div className="flex items-center gap-2 text-[9px] font-black text-muted-foreground uppercase tracking-widest mb-3"><Copy className="w-3.5 h-3.5 text-blue-400" /> ReplicaSet</div>
-                <p className="text-sm font-black text-white italic truncate group-hover:text-blue-400 transition-colors">{replicaSetName}</p>
-                <p className="text-[8px] text-muted-foreground font-bold uppercase tracking-widest mt-1">Pod Manager</p>
-              </Card>
-              <Card className="p-5 bg-slate-900/40 border-white/5 group transition-all">
-                <div className="flex justify-between items-start mb-3">
-                  <div className="flex items-center gap-2 text-[9px] font-black text-muted-foreground uppercase tracking-widest"><Waypoints className="w-3.5 h-3.5 text-blue-400" /> Service</div>
-                </div>
-                <p className="text-lg font-black text-white italic truncate group-hover:text-blue-400 transition-colors">{serviceName}</p>
-                <p className="text-[8px] text-muted-foreground font-bold uppercase tracking-widest mt-1">Network Binding</p>
-              </Card>
-              <Card className={cn("p-5 border-white/5 relative overflow-hidden transition-all duration-500", theme.bg)}>
-                <div className="flex items-center gap-2 text-[9px] font-black text-muted-foreground uppercase tracking-widest mb-3"><Zap className={cn("w-3.5 h-3.5", theme.color)} /> Lifecycle</div>
-                <p className={cn("text-2xl font-black italic", theme.color)}>{theme.label}</p>
-                <p className="text-[8px] text-muted-foreground font-bold uppercase tracking-widest mt-1">Health Check</p>
-              </Card>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+              <InfoCard icon={<Layers className="w-3.5 h-3.5 text-primary" />} label="Deployment" value={deploymentName} />
+              <InfoCard icon={<Copy className="w-3.5 h-3.5 text-primary" />} label="ReplicaSet" value={replicaSetName} small />
+              <InfoCard icon={<Waypoints className="w-3.5 h-3.5 text-primary" />} label="Service" value={serviceName} />
+              <div className={cn("so-card p-4", theme.bg, theme.border)}>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2"><Zap className={cn("w-3.5 h-3.5", theme.color)} /> Lifecycle</div>
+                <p className={cn("text-xl font-semibold", theme.color)}>{theme.label}</p>
+              </div>
             </div>
 
             {!loading && !error && (
-              <K8sPodPropertiesPanel 
+              <K8sPodPropertiesPanel
                 attrs={attrs}
                 podDisplayName={podDisplayName}
                 namespace={namespace}
@@ -175,20 +158,29 @@ export default function K8sPodDetailPage() {
                 deploymentName={deploymentName}
                 replicaSetName={replicaSetName}
                 instanceId={instanceId}
-                rawInstanceId={decodedPodName} 
+                rawInstanceId={decodedPodName}
               />
             )}
           </div>
         )}
 
         {activeTab === 'Connectivity' && (
-          <Card className="border-white/5 overflow-hidden rounded-xl bg-slate-950 h-[calc(100vh-280px)]">
+          <div className="so-card overflow-hidden h-[calc(100vh-280px)]">
             <K8sPodTopologyPanel pod={pod || { name: decodedPodName, attributes: attrs }} namespace={namespace} isOpen={true} />
-          </Card>
+          </div>
         )}
         {activeTab === 'events' && <K8sPodEventsPanel instanceId={decodedPodName} serviceName={formattedServiceName} />}
       </div>
     </AppLayout>
+  );
+}
+
+function InfoCard({ icon, label, value, small }: { icon: React.ReactNode; label: string; value: string; small?: boolean }) {
+  return (
+    <div className="so-card p-4">
+      <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">{icon} {label}</div>
+      <p className={cn("font-semibold text-foreground truncate", small ? "text-sm" : "text-base")}>{value}</p>
+    </div>
   );
 }
 

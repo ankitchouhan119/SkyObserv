@@ -27,12 +27,13 @@ import { allTools } from "./tambo-tools";
  */
 
 const serviceMetricsSchema = z.object({
-  serviceName: z.string().describe("Name of the microservice (e.g., 'new4')"),
+  serviceName: z.string().describe("Name of the microservice (e.g., 'travobuds-backend')"),
   latency: z.number().describe("Latency in milliseconds"),
   throughput: z.number().describe("Throughput in calls per minute"),
   sla: z.number().describe("SLA/Success rate percentage (0-100)"),
-  status: z.enum(["healthy", "degraded", "critical"]).optional().describe("Current health status"),
-  insight: z.string().optional().describe("A short  analysis of the service health"),
+  status: z.enum(["healthy", "degraded", "critical"]).optional().describe("Use status from getServiceMetrics tool output only"),
+  normalStatus: z.enum(["NORMAL", "ABNORMAL", "UNKNOWN"]).optional().describe("SkyWalking health flag from getServiceMetrics"),
+  insight: z.string().optional().describe("Short note from getServiceMetrics — e.g. no traffic in window"),
 });
 
 const serviceListSchema = z.object({
@@ -132,7 +133,7 @@ const serviceInstancesSchema = z.object({
 export const components: TamboComponent[] = [
   {
     name: "ServiceMetricsCard",
-    description: "Displays a quick summary of service health (Latency, Traffic, SLA). Use when the user asks for service status.",
+    description: "Displays a quick summary of service health (Latency, Traffic, SLA). Use getServiceMetrics first and pass its status/normalStatus — never mark critical just because metrics are zero.",
     component: ServiceMetricsCard,
     propsSchema: toJsonSchema(serviceMetricsSchema),
   },

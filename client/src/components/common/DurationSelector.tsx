@@ -19,12 +19,12 @@ export function DurationSelector() {
     <div className="flex items-center gap-2">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" className="w-[180px] bg-card/50 border-white/10">
+          <Button variant="outline" className="w-[180px]">
             <Clock className="mr-2 h-4 w-4 text-primary" />
             {label}
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="bg-card border-white/10">
+        <DropdownMenuContent align="end">
           {ranges.map((r) => (
             <DropdownMenuItem key={r.label} onClick={() => setDuration(r.label, r.minutes, r.step)}>
               {r.label}

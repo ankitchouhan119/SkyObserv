@@ -200,7 +200,7 @@ export const createMarkdownComponents = (): Components => ({
    * Features a left border and italic text with proper spacing
    */
   blockquote: ({ children }) => (
-    <blockquote className="border-l-4 border-muted pl-4 italic my-4">
+    <blockquote className="border-l-2 border-border pl-3 text-[13px] text-muted-foreground my-2">
       {children}
     </blockquote>
   ),

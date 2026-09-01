@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Work+Sans:wght@400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,43 +6,94 @@
 
 @layer base {
   :root {
-    --background: 224 71% 4%;
-    --foreground: 213 31% 91%;
-    
-    --card: 224 71% 4%;
-    --card-foreground: 213 31% 91%;
-    --card-border: 224 71% 10%;
-    
-    --popover: 224 71% 4%;
-    --popover-foreground: 213 31% 91%;
-    
-    --primary: 210 100% 50%;
-    --primary-foreground: 210 40% 98%;
-    
-    --secondary: 222 47% 11%;
-    --secondary-foreground: 210 40% 98%;
-    
-    --muted: 223 47% 11%;
-    --muted-foreground: 215 20% 65%;
-    
-    --accent: 216 34% 17%;
-    --accent-foreground: 210 40% 98%;
-    
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 210 40% 98%;
+    /* SkyObserv — Minimal + Data-Dense, Analytics Blue (no green accent) */
+    --background: 210 40% 98%;
+    --foreground: 222 47% 11%;
 
-    --border: 216 34% 17%;
-    --input: 216 34% 17%;
-    --ring: 216 34% 17%;
-    
-    --radius: 0.5rem;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --card-border: 214 32% 91%;
 
-    /* Chart Colors */
-    --chart-1: 210 100% 50%; /* Blue */
-    --chart-2: 160 84% 39%;  /* Green */
-    --chart-3: 30 80% 55%;   /* Orange */
-    --chart-4: 280 65% 60%;  /* Purple */
-    --chart-5: 340 75% 55%;  /* Pink */
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 221 83% 53%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 214 32% 95%;
+    --secondary-foreground: 222 47% 11%;
+
+    --muted: 214 32% 93%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 214 95% 93%;
+    --accent-foreground: 221 83% 40%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 221 83% 53%;
+
+    --radius: 0.625rem;
+
+    --chart-1: 221 83% 53%;
+    --chart-2: 199 89% 48%;
+    --chart-3: 25 95% 53%;
+    --chart-4: 262 83% 58%;
+    --chart-5: 0 72% 51%;
+
+    --sidebar-width: 15rem;
+    --header-height: 3.5rem;
+    --grid-gap: 0.75rem;
+
+    --code-surface: 222 47% 11%;
+    --code-foreground: 213 31% 91%;
+
+    color-scheme: light;
+  }
+
+  .dark {
+    --background: 222 47% 7%;
+    --foreground: 213 31% 95%;
+
+    --card: 222 40% 11%;
+    --card-foreground: 213 31% 95%;
+    --card-border: 217 30% 22%;
+
+    --popover: 222 40% 12%;
+    --popover-foreground: 213 31% 95%;
+
+    --primary: 213 94% 68%;
+    --primary-foreground: 222 47% 9%;
+
+    --secondary: 217 30% 18%;
+    --secondary-foreground: 213 31% 95%;
+
+    --muted: 217 30% 17%;
+    --muted-foreground: 215 20% 72%;
+
+    --accent: 217 40% 21%;
+    --accent-foreground: 213 94% 80%;
+
+    --destructive: 0 72% 60%;
+    --destructive-foreground: 222 47% 9%;
+
+    --border: 217 30% 22%;
+    --input: 217 30% 25%;
+    --ring: 213 94% 68%;
+
+    --chart-1: 213 94% 68%;
+    --chart-2: 199 89% 60%;
+    --chart-3: 25 95% 62%;
+    --chart-4: 262 83% 72%;
+    --chart-5: 0 72% 63%;
+
+    --code-surface: 222 47% 9%;
+    --code-foreground: 213 31% 91%;
+
+    color-scheme: dark;
   }
 }
 
@@ -51,30 +102,177 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground antialiased font-sans;
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Work Sans', system-ui, sans-serif;
   }
-  /* Custom scrollbar for dark theme */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Outfit', system-ui, sans-serif;
+  }
+  code, pre, .font-mono {
+    font-family: ui-monospace, 'SF Mono', monospace;
+  }
   ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
-  ::-webkit-scrollbar-track {
-    @apply bg-transparent;
+    width: 6px;
+    height: 6px;
   }
   ::-webkit-scrollbar-thumb {
-    @apply bg-accent rounded-full hover:bg-muted-foreground/50 transition-colors;
+    @apply bg-border rounded-full;
+  }
+
+  /*
+   * Legacy surfaces in dashboard widgets still use literal Tailwind palette
+   * classes. Remap the common ones so dark mode has no blown-out white panels
+   * until those components are migrated to semantic tokens.
+   */
+  .dark .bg-white,
+  .dark .bg-slate-50,
+  .dark .bg-slate-100,
+  .dark .bg-gray-50,
+  .dark .bg-gray-100 {
+    background-color: hsl(var(--card));
+  }
+  .dark .text-slate-900,
+  .dark .text-slate-800,
+  .dark .text-gray-900,
+  .dark .text-gray-800 {
+    color: hsl(var(--foreground));
+  }
+  .dark .text-slate-700,
+  .dark .text-slate-600,
+  .dark .text-slate-500,
+  .dark .text-gray-700,
+  .dark .text-gray-600,
+  .dark .text-gray-500 {
+    color: hsl(var(--muted-foreground));
+  }
+  .dark .border-slate-200,
+  .dark .border-gray-200,
+  .dark .border-slate-100,
+  .dark .border-gray-100 {
+    border-color: hsl(var(--border));
+  }
+
+  /* Pastel accent tints read as glaring white blocks on dark surfaces. */
+  .dark .bg-blue-50 { background-color: rgb(59 130 246 / 0.14); }
+  .dark .bg-sky-50 { background-color: rgb(14 165 233 / 0.14); }
+  .dark .bg-cyan-50 { background-color: rgb(6 182 212 / 0.14); }
+  .dark .bg-violet-50 { background-color: rgb(139 92 246 / 0.14); }
+  .dark .bg-purple-50 { background-color: rgb(168 85 247 / 0.14); }
+  .dark .bg-emerald-50 { background-color: rgb(16 185 129 / 0.14); }
+  .dark .bg-green-50 { background-color: rgb(34 197 94 / 0.14); }
+  .dark .bg-amber-50 { background-color: rgb(245 158 11 / 0.14); }
+  .dark .bg-yellow-50 { background-color: rgb(234 179 8 / 0.14); }
+  .dark .bg-orange-50 { background-color: rgb(249 115 22 / 0.14); }
+  .dark .bg-red-50 { background-color: rgb(239 68 68 / 0.14); }
+  .dark .bg-rose-50 { background-color: rgb(244 63 94 / 0.14); }
+
+  .dark .text-blue-600, .dark .text-blue-500 { color: #60a5fa; }
+  .dark .text-sky-600, .dark .text-sky-500 { color: #38bdf8; }
+  .dark .text-violet-600 { color: #a78bfa; }
+  .dark .text-purple-500 { color: #c084fc; }
+  .dark .text-emerald-500 { color: #34d399; }
+  .dark .text-green-500 { color: #4ade80; }
+  .dark .text-amber-700, .dark .text-amber-600 { color: #fcd34d; }
+  .dark .text-yellow-500 { color: #facc15; }
+  .dark .text-orange-600, .dark .text-orange-500 { color: #fb923c; }
+  .dark .text-red-600, .dark .text-red-500 { color: #f87171; }
+  .dark .text-rose-500 { color: #fb7185; }
+}
+
+@layer components {
+  .so-card {
+    @apply bg-card border border-border rounded-xl shadow-sm;
+  }
+  .so-card-hover {
+    @apply so-card transition-all duration-200 hover:shadow-md hover:border-primary/25 cursor-pointer;
+  }
+  .so-kpi {
+    @apply so-card p-4 flex items-start gap-3;
+  }
+  .so-icon-wrap {
+    @apply flex h-9 w-9 shrink-0 items-center justify-center rounded-lg;
+  }
+  .so-page {
+    @apply space-y-5 max-w-7xl mx-auto pb-8;
+  }
+  .so-page-header h2 {
+    font-family: 'Outfit', system-ui, sans-serif;
+    @apply text-lg font-semibold text-foreground;
+  }
+  .so-page-header p {
+    @apply text-sm text-muted-foreground mt-0.5;
+  }
+  .so-filter-bar {
+    @apply so-card p-4 sticky top-0 z-10;
+  }
+  .so-table-wrap {
+    @apply so-card overflow-hidden;
+  }
+  .so-tabs {
+    @apply bg-muted/60 border border-border p-1 rounded-lg;
+  }
+  .so-status-ok {
+    @apply text-primary;
+  }
+  .so-status-bad {
+    @apply text-destructive;
+  }
+
+  /* Topology graph — canvas inherits grab cursor from library hover state */
+  .topology-graph .force-graph-container canvas {
+    cursor: inherit;
+  }
+  .topology-graph .force-graph-container.clickable canvas {
+    cursor: grab;
+  }
+  .topology-graph .force-graph-container.grabbable canvas {
+    cursor: grabbing;
+  }
+  .topology-dot-grid {
+    background-image: radial-gradient(circle, hsl(var(--muted-foreground) / 0.18) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+  .so-status-warn {
+    @apply text-[hsl(25,95%,53%)] dark:text-[hsl(25,95%,64%)];
+  }
+
+  .so-code-surface {
+    background-color: hsl(var(--code-surface));
+    color: hsl(var(--code-foreground));
+  }
+
+  .so-section {
+    @apply max-w-6xl mx-auto px-4 sm:px-6;
+  }
+
+  .so-eyebrow {
+    @apply text-xs font-semibold uppercase tracking-[0.14em] text-primary;
+  }
+
+  .so-h2 {
+    @apply text-2xl sm:text-[2rem] font-bold text-foreground tracking-tight leading-tight;
+    font-family: 'Outfit', system-ui, sans-serif;
+  }
+
+  .so-reveal {
+    animation: so-reveal 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 }
 
-/* Glassmorphism utilities */
-.glass-panel {
-  @apply bg-card/80 backdrop-blur-md border border-border shadow-lg;
+@keyframes so-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
-/* Dashboard Grid Layout */
-.dashboard-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1.5rem;
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
-

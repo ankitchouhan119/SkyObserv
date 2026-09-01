@@ -11,7 +11,7 @@ export function ServiceListCard(props: any) {
     <div className="space-y-4">
       <div className="flex items-center gap-2 px-1">
         <Server className="w-4 h-4 text-primary" />
-        <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+        <h3 className="text-sm font-semibold text-foreground">
           Services Detected ({services.length})
         </h3>
       </div>
@@ -25,34 +25,31 @@ export function ServiceListCard(props: any) {
           let textColor = "text-gray-500";
 
           if (displayStatus === "NORMAL") {
-            dotColor = "bg-green-400 shadow-[0_0_8px_#4ade80]";
-            textColor = "text-green-400";
+            dotColor = "bg-primary";
+            textColor = "text-primary";
           } else if (displayStatus === "ABNORMAL") {
-            dotColor = "bg-red-400 shadow-[0_0_8px_#f87171]";
-            textColor = "text-red-400";
+            dotColor = "bg-rose-400";
+            textColor = "text-rose-400";
           }
           
 
           return (
-            <Card key={service.id || idx} className="p-4 bg-card/40 border-white/5 hover:bg-card/60 transition-all">
+            <Card key={service.id || idx} className="p-3 border-border bg-card hover:shadow-sm transition-shadow">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <Activity className="w-4 h-4 text-primary" />
-                    <h4 className="font-semibold text-slate-100 truncate">
+                    <Activity className="w-3.5 h-3.5 text-primary" />
+                    <h4 className="text-sm font-medium text-foreground truncate">
                       {service.shortName || service.name}
                     </h4>
                   </div>
-                  <p className="text-[10px] text-muted-foreground opacity-50 italic">ID: {service.id}</p>
                 </div>
-                
-                <div className="flex flex-col items-end gap-1.5">
-                  <div className="flex items-center gap-2 px-2 py-1 bg-white/5 rounded border border-white/5">
-                    <div className={`w-2 h-2 rounded-full ${dotColor}`} />
-                    <span className={`text-[10px] font-bold ${textColor}`}>
-                      {displayStatus}
-                    </span>
-                  </div>
+
+                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded border border-border/60 bg-secondary/40">
+                  <div className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
+                  <span className={`text-[10px] font-medium ${textColor}`}>
+                    {displayStatus}
+                  </span>
                 </div>
               </div>
             </Card>

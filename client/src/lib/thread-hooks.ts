@@ -102,6 +102,34 @@ export function usePositioning(
 }
 
 /**
+ * Detects JSON or tool-call argument text that should not be shown to users.
+ */
+export function isHiddenAssistantContent(content: string): boolean {
+  const trimmed = content.trim();
+  if (!trimmed) return true;
+
+  if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+    try {
+      JSON.parse(trimmed);
+      return true;
+    } catch {
+      return /"[\w]+"\s*:/.test(trimmed);
+    }
+  }
+
+  if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+    try {
+      JSON.parse(trimmed);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  return false;
+}
+
+/**
  * Converts message content into a safely renderable format.
  * Primarily joins text blocks from arrays into a single string.
  * @param content - The message content (string, element, array, etc.)

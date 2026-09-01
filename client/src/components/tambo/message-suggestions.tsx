@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useEffect, useRef } from "react";
-import { Loader2Icon, Sparkles } from "lucide-react";
+import { Loader2Icon } from "lucide-react";
 
 import { MessageGenerationStage } from "./message-generation-stage";
 import { Tooltip, TooltipProvider } from "@/components/ui/tooltip";
@@ -147,15 +147,15 @@ const MessageSuggestionsStatus = React.forwardRef<HTMLDivElement, React.HTMLAttr
     const { error, isGenerating, thread } = useMessageSuggestionsContext();
 
     return (
-      <div ref={ref} className={cn("px-4 py-2 text-sm", className)} {...props}>
+      <div ref={ref} className={cn("px-3 py-1.5 text-xs", className)} {...props}>
         {error && <div className="text-destructive font-medium">{error.message}</div>}
         <div className="min-h-[24px]">
           {thread?.generationStage && thread.generationStage !== "COMPLETE" ? (
             <MessageGenerationStage />
           ) : isGenerating ? (
-            <div className="flex items-center gap-2 text-muted-foreground animate-pulse">
-              <Loader2Icon className="h-4 w-4 animate-spin" />
-              <span>Syncing dynamic suggestions...</span>
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Loader2Icon className="h-3 w-3 animate-spin" />
+              <span className="text-[11px]">Getting suggestions...</span>
             </div>
           ) : null}
         </div>
@@ -175,34 +175,27 @@ const MessageSuggestionsList = React.forwardRef<HTMLDivElement, React.HTMLAttrib
     const altKey = isMac ? "⌥" : "Alt";
 
     return (
-      <div ref={ref} className={cn("flex flex-wrap gap-2 px-4 pb-4", className)} {...props}>
+      <div ref={ref} className={cn("flex flex-wrap gap-1.5 px-3 pb-2", className)} {...props}>
         {suggestions.length > 0 ? (
           suggestions.map((suggestion, index) => (
             <TooltipProvider key={suggestion.id || index}>
               <Tooltip content={`${modKey}+${altKey}+${index + 1}`} side="top">
                 <button
                   className={cn(
-                    "rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs transition-all",
-                    "hover:bg-blue-500/20 hover:border-blue-500/40 text-slate-300 hover:text-white",
-                    "disabled:opacity-50 disabled:cursor-not-allowed text-left",
-                    selectedSuggestionId === suggestion.id && "bg-blue-500/30 border-blue-500 text-white shadow-lg"
+                    "rounded-md border border-border/60 bg-secondary/40 px-2.5 py-1 text-[11px] font-medium",
+                    "text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors",
+                    "disabled:opacity-50 disabled:cursor-not-allowed",
+                    selectedSuggestionId === suggestion.id && "bg-primary/10 border-primary/30 text-primary",
                   )}
                   onClick={async () => !isGenerating && (await accept({ suggestion }))}
                   disabled={isGenerating}
                 >
-                  <div className="flex items-center gap-1.5">
-                    <Sparkles className="h-3 w-3 text-blue-400" />
-                    <span>{suggestion.title}</span>
-                  </div>
+                  {suggestion.title}
                 </button>
               </Tooltip>
             </TooltipProvider>
           ))
-        ) : (
-          [1, 2, 3].map((i) => (
-            <div key={i} className="h-8 w-28 rounded-full bg-white/5 animate-pulse border border-white/5" />
-          ))
-        )}
+        ) : null}
       </div>
     );
   }

@@ -7,7 +7,7 @@ import { useQuery } from '@apollo/client';
 import { GET_TRACES } from '@/apollo/queries/traces';
 import { GET_ALL_SERVICES } from '@/apollo/queries/services';
 import { useDurationStore } from '@/store/useDurationStore';
-import { Card } from '@/components/ui/card';
+import { useAuth } from '@/hooks/useAuth';
 import {
   Select,
   SelectContent,
@@ -22,6 +22,7 @@ import { useLocation } from 'wouter';
 export default function TracesPage() {
   const [, setLocation] = useLocation();
   const { durationObj, setCustomRange } = useDurationStore();
+  const { user } = useAuth();
 
   const [status, setStatus] = useState<'ALL' | 'SUCCESS' | 'ERROR'>('ALL');
   const [minDuration, setMinDuration] = useState('');
@@ -31,6 +32,16 @@ export default function TracesPage() {
     variables: { duration: durationObj },
   });
 
+  const services = servicesData?.getAllServices ?? [];
+  const isAdmin = user?.isAdmin === true;
+
+  useEffect(() => {
+    if (serviceId !== 'ALL' || services.length === 0) return;
+    if (!isAdmin) {
+      setServiceId(services[0].id);
+    }
+  }, [services, serviceId, isAdmin]);
+
   const { data, loading, error, refetch } = useQuery(GET_TRACES, {
     variables: {
       condition: {
@@ -38,7 +49,7 @@ export default function TracesPage() {
         queryDuration: durationObj,
         traceState: status,
         queryOrder: 'BY_START_TIME',
-        minTraceDuration: minDuration ? Number(minDuration) : undefined, 
+        minTraceDuration: minDuration ? Number(minDuration) : undefined,
         paging: { pageNum: 1, pageSize: 100 },
       },
     },
@@ -50,61 +61,57 @@ export default function TracesPage() {
   };
 
   const traces = data?.queryBasicTraces?.traces ?? [];
-  const services = servicesData?.getAllServices ?? [];
 
-useEffect(() => {
-  const handleAutoUpdate = (e: any) => {
-    const { filters } = e.detail;
-    
-    if (filters) {
-      console.log("Trace Filters Received:", filters); 
+  useEffect(() => {
+    const handleAutoUpdate = (e: any) => {
+      const { filters } = e.detail;
 
-      // 1. Local States Update
-      if (filters.traceState) setStatus(filters.traceState);
-      if (filters.serviceId) setServiceId(filters.serviceId);
-      if (filters.minDuration) setMinDuration(filters.minDuration);
-      
-      // 2. Duration Store Update
-      if (filters.startDate && filters.endDate) {
-        setCustomRange(filters.startDate, filters.endDate);
+      if (filters) {
+        if (filters.traceState) setStatus(filters.traceState);
+        if (filters.serviceId) setServiceId(filters.serviceId);
+        if (filters.minDuration) setMinDuration(filters.minDuration);
+
+        if (filters.startDate && filters.endDate) {
+          setCustomRange(filters.startDate, filters.endDate);
+        }
+
+        setTimeout(() => {
+          refetch({
+            condition: {
+              serviceId: filters.serviceId !== 'ALL' ? filters.serviceId : (serviceId !== 'ALL' ? serviceId : undefined),
+              queryDuration: durationObj,
+              traceState: filters.traceState || status,
+              minTraceDuration: filters.minDuration ? Number(filters.minDuration) : (minDuration ? Number(minDuration) : undefined),
+              queryOrder: 'BY_START_TIME',
+              paging: { pageNum: 1, pageSize: 100 },
+            },
+          });
+        }, 500);
       }
+    };
 
-      // 3. Force Refresh
-      setTimeout(() => {
-        refetch({
-          condition: {
-            serviceId: filters.serviceId !== 'ALL' ? filters.serviceId : (serviceId !== 'ALL' ? serviceId : undefined),
-            queryDuration: durationObj,
-            traceState: filters.traceState || status,
-            minTraceDuration: filters.minDuration ? Number(filters.minDuration) : (minDuration ? Number(minDuration) : undefined),
-            queryOrder: 'BY_START_TIME',
-            paging: { pageNum: 1, pageSize: 100 },
-          }
-        });
-      }, 500);
-    }
-  };
-
-  window.addEventListener("skyobserv:query-update", handleAutoUpdate);
-  return () => window.removeEventListener("skyobserv:query-update", handleAutoUpdate);
-
-}, [refetch, setCustomRange, serviceId, status, minDuration, durationObj]);
+    window.addEventListener("skyobserv:query-update", handleAutoUpdate);
+    return () => window.removeEventListener("skyobserv:query-update", handleAutoUpdate);
+  }, [refetch, setCustomRange, serviceId, status, minDuration, durationObj]);
 
   return (
     <AppLayout>
-      <div className="h-[calc(100vh-140px)] flex flex-col max-w-7xl mx-auto">
-        <Card className="p-4 mb-6 border-white/5 bg-card/50 shadow-sm sticky top-0 z-10 backdrop-blur-md">
+      <div className="h-[calc(100vh-140px)] flex flex-col so-page">
+        <div className="so-page-header">
+          <h2>Traces</h2>
+          <p>Browse distributed traces across your services.</p>
+        </div>
+
+        <div className="so-filter-bar">
           <div className="flex flex-wrap items-center gap-4">
-            
-            {/* Service filter */}
             <div className="flex items-center gap-2">
               <Server className="w-4 h-4 text-primary" />
               <Select value={serviceId} onValueChange={setServiceId}>
-                <SelectTrigger className="w-[200px] h-9 bg-background/50 border-white/10 text-white font-medium">
+                <SelectTrigger className="w-[200px] h-9 bg-card">
                   <SelectValue placeholder="Select Service" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ALL">All Services</SelectItem>
+                  {isAdmin && <SelectItem value="ALL">All Services</SelectItem>}
                   {services.map((s: any) => (
                     <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                   ))}
@@ -112,25 +119,23 @@ useEffect(() => {
               </Select>
             </div>
 
-            <div className="h-6 w-px bg-white/10" />
+            <div className="h-6 w-px bg-border hidden sm:block" />
 
-            {/* Search box */}
             <div className="flex items-center gap-2 flex-1 min-w-[200px]">
               <Search className="w-4 h-4 text-muted-foreground" />
               <Input
                 placeholder="Search trace ID..."
-                className="bg-transparent border-none focus-visible:ring-0 px-0 h-9 text-white placeholder:text-slate-500"
+                className="bg-transparent border-none focus-visible:ring-0 px-0 h-9"
               />
             </div>
 
-            <div className="h-6 w-px bg-white/10" />
+            <div className="h-6 w-px bg-border hidden sm:block" />
 
-            {/* Status + Min Duration */}
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
-                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-tight">Status</span>
+                <span className="text-xs text-muted-foreground font-medium">Status</span>
                 <Select value={status} onValueChange={(val: any) => setStatus(val)}>
-                  <SelectTrigger className="w-[110px] h-9 bg-background/50 border-white/10 text-white">
+                  <SelectTrigger className="w-[110px] h-9 bg-card">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -142,31 +147,27 @@ useEffect(() => {
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-tight">Min (ms)</span>
+                <span className="text-xs text-muted-foreground font-medium">Min (ms)</span>
                 <Input
                   type="number"
                   value={minDuration}
                   onChange={(e) => setMinDuration(e.target.value)}
-                  className="w-[85px] h-9 bg-background/50 border-white/10 text-white font-mono"
+                  className="w-[85px] h-9 bg-card font-mono"
                   placeholder="0"
                 />
               </div>
             </div>
           </div>
-        </Card>
+        </div>
 
         {error ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-red-400 gap-2 bg-red-500/5 rounded-xl border border-red-500/10">
+          <div className="flex-1 flex flex-col items-center justify-center text-destructive gap-2 so-card">
             <AlertCircle className="w-10 h-10 opacity-50" />
             <p className="font-medium text-sm">Failed to load traces: {error.message}</p>
           </div>
         ) : (
           <div className="flex-1 min-h-0">
-            <TraceList
-              traces={traces}
-              loading={loading}
-              onSelectTrace={handleTraceSelect}
-            />
+            <TraceList traces={traces} loading={loading} onSelectTrace={handleTraceSelect} />
           </div>
         )}
       </div>

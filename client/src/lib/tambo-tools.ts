@@ -57,10 +57,61 @@ const getDynamicDuration = (startDate?: string, endDate?: string) => {
   };
 };
 
+function decodeServiceId(id: string): string {
+  try {
+    const encoded = id.split(".")[0];
+    if (typeof atob === "function") {
+      return atob(encoded);
+    }
+    return id;
+  } catch {
+    return id;
+  }
+}
+
+function resolveServiceHealth(
+  normal: boolean | null | undefined,
+  latency: number,
+  throughput: number,
+  sla: number,
+): {
+  status: "healthy" | "degraded" | "critical";
+  normalStatus: "NORMAL" | "ABNORMAL" | "UNKNOWN";
+  insight?: string;
+} {
+  const normalStatus =
+    normal === true ? "NORMAL" : normal === false ? "ABNORMAL" : "UNKNOWN";
+
+  if (normalStatus === "ABNORMAL") {
+    return {
+      status: "critical",
+      normalStatus,
+      insight: "SkyWalking reports this service as abnormal.",
+    };
+  }
+
+  if (normalStatus === "NORMAL") {
+    if (latency === 0 && throughput === 0 && sla === 0) {
+      return {
+        status: "healthy",
+        normalStatus,
+        insight: "No traffic in the selected time window. Service is registered and marked normal.",
+      };
+    }
+    return { status: "healthy", normalStatus };
+  }
+
+  return {
+    status: "degraded",
+    normalStatus,
+    insight: "Health status could not be determined from SkyWalking.",
+  };
+}
+
 
 export const getServicesTool = defineTool({
   name: "getServices",
-  description: "INTERNAL: Fetch services for ServiceListCard.",
+  description: "INTERNAL: Fetch services for ServiceListCard. Use this for 'health of all services' — normalStatus comes from SkyWalking.",
   inputSchema: toJsonSchema(z.object({})),
   outputSchema: toJsonSchema(z.object({ 
     services: z.array(z.object({
@@ -115,7 +166,7 @@ export const getServicesTool = defineTool({
  */
 export const getServiceMetricsTool = defineTool({
   name: "getServiceMetrics",
-  description: "INTERNAL: Fetch metrics for ServiceMetricsCard. Supports custom date range.",
+  description: "INTERNAL: Fetch metrics for ServiceMetricsCard. Returns SkyWalking health status — zero metrics does NOT mean critical if normal=true.",
   inputSchema: toJsonSchema(z.object({
     serviceId: z.string().describe("The ID of the service"),
     startDate: z.string().optional().describe("Start date: 'YYYY-MM-DD HHmm' or 'DD-MM-YYYY'"),
@@ -125,31 +176,65 @@ export const getServiceMetricsTool = defineTool({
     serviceName: z.string(),
     latency: z.number(),
     throughput: z.number(),
-    sla: z.number()
+    sla: z.number(),
+    status: z.enum(["healthy", "degraded", "critical"]),
+    normalStatus: z.enum(["NORMAL", "ABNORMAL", "UNKNOWN"]),
+    insight: z.string().optional(),
   })),
   tool: async ({ serviceId, startDate, endDate }) => {
     try {
       const duration = getDynamicDuration(startDate, endDate);
-      const { data } = await client.query({
-        query: GET_SERVICE_METRICS,
-        variables: { serviceId, duration },
-        fetchPolicy: "network-only",
-      });
+      const [{ data }, { data: servicesData }] = await Promise.all([
+        client.query({
+          query: GET_SERVICE_METRICS,
+          variables: { serviceId, duration },
+          fetchPolicy: "network-only",
+        }),
+        client.query({
+          query: GET_ALL_SERVICES,
+          variables: { duration },
+          fetchPolicy: "network-only",
+        }),
+      ]);
 
       const latency = data?.getServiceLatency?.values || [];
       const throughput = data?.getServiceThroughput?.values || [];
       const sla = data?.getServiceSLA?.values || [];
 
-      const getAvg = (arr: any[]) => arr.length > 0 ? arr.reduce((s, v) => s + (v.value || 0), 0) / arr.length : 0;
+      const getAvg = (arr: { value?: number }[]) =>
+        arr.length > 0 ? arr.reduce((s, v) => s + (v.value || 0), 0) / arr.length : 0;
+
+      const avgLatency = Math.round(getAvg(latency));
+      const avgThroughput = Math.round(getAvg(throughput));
+      const avgSla = Math.round(getAvg(sla) * 100) / 100;
+
+      const services = servicesData?.getAllServices || [];
+      const service = services.find(
+        (s: { id?: string; name?: string }) => s.id === serviceId || s.name === serviceId,
+      );
+      const serviceName = service?.shortName || service?.name || decodeServiceId(serviceId);
+      const health = resolveServiceHealth(service?.normal, avgLatency, avgThroughput, avgSla);
 
       return {
-        serviceName: serviceId,
-        latency: Math.round(getAvg(latency)),
-        throughput: Math.round(getAvg(throughput)),
-        sla: Math.round(getAvg(sla) * 100) / 100,
+        serviceName,
+        latency: avgLatency,
+        throughput: avgThroughput,
+        sla: avgSla,
+        status: health.status,
+        normalStatus: health.normalStatus,
+        insight: health.insight,
       };
     } catch (error) {
-      return { serviceName: serviceId, latency: 0, throughput: 0, sla: 0 };
+      const serviceName = decodeServiceId(serviceId);
+      return {
+        serviceName,
+        latency: 0,
+        throughput: 0,
+        sla: 0,
+        status: "degraded" as const,
+        normalStatus: "UNKNOWN" as const,
+        insight: "Could not load metrics for this service.",
+      };
     }
   },
 });

@@ -19,18 +19,18 @@ export function CustomRangePicker() {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="outline" className="bg-card/50 border-white/10 text-xs h-9">
+        <Button variant="outline" className="text-xs h-9">
           <CalendarIcon className="mr-2 h-3.5 w-3.5 text-primary" />
           Custom Date
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-72 bg-card border-white/10 p-4" align="end">
+      <PopoverContent className="w-72 p-4" align="end">
         <div className="space-y-4">
           <div className="space-y-2">
             <label className="text-[10px] uppercase font-bold text-muted-foreground">Start Date</label>
             <Input 
               type="date" // only asks for date not time
-              className="bg-background border-white/5"
+              className="bg-background"
               value={start}
               onChange={(e) => setStart(e.target.value)}
             />
@@ -40,7 +40,7 @@ export function CustomRangePicker() {
             <label className="text-[10px] uppercase font-bold text-muted-foreground">End Date</label>
             <Input 
               type="date" 
-              className="bg-background border-white/5"
+              className="bg-background"
               value={end}
               onChange={(e) => setEnd(e.target.value)}
             />

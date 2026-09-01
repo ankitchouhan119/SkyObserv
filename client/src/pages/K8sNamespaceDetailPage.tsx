@@ -3,7 +3,6 @@ import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useParams, useLocation } from 'wouter';
 import { useQuery, useApolloClient } from '@apollo/client';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -169,138 +168,137 @@ export default function K8sNodeExplorerPage() {
 
   return (
     <AppLayout>
-      <div className="max-w-7xl mx-auto space-y-6 px-4 py-8 text-slate-200">
-        
-        {/* HEADER */}
-        <header className="flex justify-between items-center pb-2">
-          <div className="space-y-1">
-            <button onClick={() => setLocation('/kubernetes')} className="text-[10px] font-black text-muted-foreground flex items-center gap-1 uppercase hover:text-blue-400">
-              <ArrowLeft size={10} /> CLUSTER
-            </button>
-            <h1 className="text-3xl font-black text-white italic uppercase tracking-tighter">Workload <span className="text-blue-500">Explorer</span></h1>
-          </div>
+      <div className="so-page">
+        <header className="so-page-header">
+          <button onClick={() => setLocation('/kubernetes')} className="text-sm text-muted-foreground flex items-center gap-1 hover:text-primary mb-2">
+            <ArrowLeft size={14} /> Back to cluster
+          </button>
+          <h2>Workload Explorer</h2>
+          <p>Browse pods, nodes, and namespace breakdown.</p>
         </header>
 
-        {/* 1. NODE SELECTOR */}
-        <Card className="p-4 border-white/5 bg-slate-900/40 backdrop-blur-md">
+        <div className="so-card p-4">
           <div className="flex flex-wrap items-center gap-4">
-            <div className="flex items-center gap-2 text-blue-400"><Server size={18} /><span className="text-xs font-black uppercase text-white">Target Node:</span></div>
+            <div className="flex items-center gap-2 text-primary">
+              <Server size={18} />
+              <span className="text-sm font-medium text-foreground">Target node</span>
+            </div>
             <div className="flex-1 max-w-[400px]">
               <Select value={selectedNode} onValueChange={setSelectedNode}>
-                <SelectTrigger className="bg-black/40 border-white/10 text-white font-bold uppercase text-[11px]"><SelectValue placeholder="Select Node" /></SelectTrigger>
-                <SelectContent className="bg-slate-900 border-white/10 text-white">
-                  <SelectItem value="All">Show All Nodes</SelectItem>
-                  {availableNodes.map(node => (<SelectItem key={node} value={node}>{node}</SelectItem>))}
+                <SelectTrigger className="bg-card"><SelectValue placeholder="Select Node" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="All">Show all nodes</SelectItem>
+                  {availableNodes.map((node) => (<SelectItem key={node} value={node}>{node}</SelectItem>))}
                 </SelectContent>
               </Select>
             </div>
           </div>
-        </Card>
+        </div>
 
-        {/* 2. METRICS ROW (Compute + Network Side-by-Side) */}
         {selectedNode !== "All" && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <Card className="lg:col-span-8 p-6 bg-blue-500/5 border-blue-500/20 flex flex-col md:flex-row gap-8 items-center relative overflow-hidden group">
-                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20"><Activity size={80} className="text-blue-400" /></div>
-                <div className="w-full md:w-1/3 border-b md:border-b-0 md:border-r border-white/10 pb-6 md:pb-0 md:pr-6">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-blue-400 mb-1">Compute Environment</p>
-                  <h2 className="text-2xl font-black text-white italic truncate uppercase">{selectedNode}</h2>
-                </div>
-                <div className="w-full md:w-2/3 grid grid-cols-1 sm:grid-cols-2 gap-8 z-10">
-                   <MetricProgress label="Node CPU Usage" value={nodeMetrics.cpu} loading={loadingMetrics} color="bg-blue-500" />
-                   <MetricProgress label="Node Memory Usage" value={nodeMetrics.mem} loading={loadingMetrics} color="bg-cyan-500" />
-                </div>
-            </Card>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+            <div className="lg:col-span-8 so-card p-5 flex flex-col md:flex-row gap-6 items-center">
+              <div className="w-full md:w-1/3 border-b md:border-b-0 md:border-r border-border pb-4 md:pb-0 md:pr-6">
+                <p className="text-xs text-muted-foreground mb-1">Compute environment</p>
+                <h3 className="text-lg font-semibold text-foreground truncate">{selectedNode}</h3>
+              </div>
+              <div className="w-full md:w-2/3 grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <MetricProgress label="Node CPU" value={nodeMetrics.cpu} loading={loadingMetrics} color="bg-primary" />
+                <MetricProgress label="Node memory" value={nodeMetrics.mem} loading={loadingMetrics} color="bg-violet-500" />
+              </div>
+            </div>
 
-            <Card className="lg:col-span-4 p-6 bg-emerald-500/5 border-emerald-500/20 relative overflow-hidden">
-                <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-2"><Network className="text-emerald-400" size={18} /><span className="text-[10px] font-black uppercase text-white">Live Network I/O</span></div>
-                    <button onClick={fetchNetworkOnly} disabled={loadingNetwork} className="p-1 hover:bg-emerald-500/20 rounded-md border border-emerald-500/10 transition-all">
-                      <RefreshCw size={12} className={cn("text-emerald-400", loadingNetwork && "animate-spin")} />
-                    </button>
+            <div className="lg:col-span-4 so-card p-5">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                  <Network className="text-primary" size={18} /> Network I/O
                 </div>
-                <div className="space-y-6 relative z-10">
-                    <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-2"><ArrowDownCircle className="text-emerald-400" size={16} /><span className="text-[10px] font-bold text-slate-400 uppercase">Incoming</span></div>
-                        <span className="text-sm font-black text-white italic">{formatBytes(nodeMetrics.netIn)}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-2"><ArrowUpCircle className="text-blue-400" size={16} /><span className="text-[10px] font-bold text-slate-400 uppercase">Outgoing</span></div>
-                        <span className="text-sm font-black text-white italic">{formatBytes(nodeMetrics.netOut)}</span>
-                    </div>
+                <button onClick={fetchNetworkOnly} disabled={loadingNetwork} className="p-1.5 hover:bg-muted rounded-md border border-border">
+                  <RefreshCw size={14} className={cn("text-primary", loadingNetwork && "animate-spin")} />
+                </button>
+              </div>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground"><ArrowDownCircle className="text-primary" size={16} /> Incoming</div>
+                  <span className="text-sm font-semibold text-foreground">{formatBytes(nodeMetrics.netIn)}</span>
                 </div>
-            </Card>
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground"><ArrowUpCircle className="text-sky-500" size={16} /> Outgoing</div>
+                  <span className="text-sm font-semibold text-foreground">{formatBytes(nodeMetrics.netOut)}</span>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
-        {/* 3. BREAKDOWN TABLE (Wapas add kar diya) */}
         {selectedNode !== "All" && (
-          <Card className="border-white/5 bg-slate-900/40 overflow-hidden">
-            <div className="p-3 border-b border-white/5 bg-white/5 flex items-center justify-between">
-              <div className="flex items-center gap-2 uppercase font-black text-[10px] italic text-blue-400">
-                <LayoutGrid size={12} /> Resource Mapping
-              </div>
+          <div className="so-table-wrap">
+            <div className="p-3 border-b border-border flex items-center gap-2 text-sm font-medium text-foreground">
+              <LayoutGrid size={14} className="text-primary" /> Resource mapping
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full text-left">
+              <table className="w-full text-left text-sm">
                 <thead>
-                  <tr className="bg-black/30 text-[9px] font-black uppercase text-slate-500 border-b border-white/5">
-                    <th className="px-6 py-4">Namespace</th>
-                    <th className="px-6 py-4 text-center">Pods</th>
-                    <th className="px-6 py-4 text-center">Deployments</th>
-                    <th className="px-6 py-4 text-center">StatefulSets</th>
-                    <th className="px-6 py-4 text-center">DaemonSets</th>
-                    <th className="px-6 py-4 text-right">Activity</th>
+                  <tr className="bg-muted/50 text-xs text-muted-foreground border-b border-border">
+                    <th className="px-4 py-3 font-medium">Namespace</th>
+                    <th className="px-4 py-3 text-center font-medium">Pods</th>
+                    <th className="px-4 py-3 text-center font-medium">Deployments</th>
+                    <th className="px-4 py-3 text-center font-medium">StatefulSets</th>
+                    <th className="px-4 py-3 text-center font-medium">DaemonSets</th>
+                    <th className="px-4 py-3 text-right font-medium">Activity</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/5">
+                <tbody className="divide-y divide-border">
                   {tableData.map((ns: any) => (
-                    <tr key={ns.name} className="hover:bg-white/[0.02] transition-colors group">
-                      <td className="px-6 py-4 font-black text-white italic text-xs uppercase group-hover:text-blue-400">{ns.name}</td>
-                      <td className="px-6 py-4 text-center"><span className="bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded-md border border-blue-500/20 font-black text-[10px]">{ns.pods}</span></td>
-                      <td className="px-6 py-4 text-center text-xs font-bold text-slate-400">{ns.deps}</td>
-                      <td className="px-6 py-4 text-center text-xs font-bold text-slate-400">{ns.sts}</td>
-                      <td className="px-6 py-4 text-center text-xs font-bold text-slate-400">{ns.ds}</td>
-                      <td className="px-6 py-4 text-right text-[9px] font-black text-emerald-500 uppercase italic">Live</td>
+                    <tr key={ns.name} className="hover:bg-muted/30">
+                      <td className="px-4 py-3 font-medium text-foreground">{ns.name}</td>
+                      <td className="px-4 py-3 text-center"><span className="bg-primary/10 text-primary px-2 py-0.5 rounded text-xs font-medium">{ns.pods}</span></td>
+                      <td className="px-4 py-3 text-center text-muted-foreground">{ns.deps}</td>
+                      <td className="px-4 py-3 text-center text-muted-foreground">{ns.sts}</td>
+                      <td className="px-4 py-3 text-center text-muted-foreground">{ns.ds}</td>
+                      <td className="px-4 py-3 text-right text-xs text-primary font-medium">Live</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-          </Card>
+          </div>
         )}
 
-        {/* 4. FILTERS & PODS */}
-        <div className="space-y-4 pt-4 border-t border-white/5">
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="flex-1 min-w-[300px] relative group">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-blue-400" />
-              <Input placeholder="Search Pods..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10 h-11 bg-slate-900/60 border-white/10 text-white font-black uppercase text-xs focus-visible:ring-blue-500/50" />
+        <div className="space-y-4 pt-2 border-t border-border">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex-1 min-w-[240px] relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input placeholder="Search pods..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10 h-10 bg-card" />
             </div>
             <Select value={selectedNamespace} onValueChange={setSelectedNamespace}>
-              <SelectTrigger className="w-[200px] h-11 bg-slate-900/60 border-white/10 text-white font-black uppercase text-[10px]"><SelectValue placeholder="Namespace" /></SelectTrigger>
-              <SelectContent className="bg-slate-900 border-white/10 text-white">
-                <SelectItem value="All">All Namespaces</SelectItem>
-                {availableNamespaces.map(ns => (<SelectItem key={ns} value={ns}>{ns}</SelectItem>))}
+              <SelectTrigger className="w-[200px] h-10 bg-card"><SelectValue placeholder="Namespace" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="All">All namespaces</SelectItem>
+                {availableNamespaces.map((ns) => (<SelectItem key={ns} value={ns}>{ns}</SelectItem>))}
               </SelectContent>
             </Select>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {filteredPods.map((pod: any) => (
-              <Card key={pod.id} onClick={() => setLocation(`/kubernetes/namespace/${pod.namespace}/pod/${encodeURIComponent(pod.id)}`)} className="p-5 bg-slate-900/40 border-white/5 hover:border-blue-500/30 transition-all cursor-pointer group relative overflow-hidden">
-                <div className="flex items-start gap-4 relative z-10">
-                  <div className="p-3 bg-blue-500/10 rounded-2xl border border-blue-500/20 group-hover:scale-110 transition-transform"><Box className="text-blue-400" size={22} /></div>
+              <div
+                key={pod.id}
+                onClick={() => setLocation(`/kubernetes/namespace/${pod.namespace}/pod/${encodeURIComponent(pod.id)}`)}
+                className="so-card-hover p-4 cursor-pointer"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="so-icon-wrap bg-primary/10 text-primary"><Box size={18} /></div>
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-black text-white italic truncate uppercase">{pod.name}</h4>
-                    <span className="text-[8px] font-black text-blue-500 bg-blue-500/10 px-1.5 py-0.5 rounded border border-blue-500/10 uppercase">{pod.namespace}</span>
+                    <h4 className="font-semibold text-foreground truncate">{pod.name}</h4>
+                    <span className="text-[10px] font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded mt-1 inline-block">{pod.namespace}</span>
                   </div>
                 </div>
-                <div className="mt-4 pt-4 border-t border-white/5 flex justify-between items-center text-[9px] font-black text-slate-500 uppercase tracking-widest">
+                <div className="mt-3 pt-3 border-t border-border flex justify-between items-center text-xs text-muted-foreground">
                   <span>{pod.nodeName}</span>
-                  <span className="flex items-center gap-1 text-emerald-500 italic"><Activity size={10} /> POD</span>
+                  <span className="flex items-center gap-1 text-primary"><Activity size={12} /> Pod</span>
                 </div>
-              </Card>
+              </div>
             ))}
           </div>
         </div>
@@ -309,15 +307,15 @@ export default function K8sNodeExplorerPage() {
   );
 }
 
-function MetricProgress({ label, value, loading, color }: any) {
+function MetricProgress({ label, value, loading, color }: { label: string; value: number; loading: boolean; color: string }) {
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       <div className="flex justify-between items-end">
-        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{label}</span>
-        <span className="text-lg font-black text-white italic tracking-tighter">{loading ? '...' : `${value}%`}</span>
+        <span className="text-xs text-muted-foreground">{label}</span>
+        <span className="text-lg font-semibold text-foreground tabular-nums">{loading ? '—' : `${value}%`}</span>
       </div>
-      <div className="h-2 bg-black/40 rounded-full border border-white/5 overflow-hidden">
-        <div className={cn("h-full transition-all duration-1000", color)} style={{ width: `${Math.min(value, 100)}%` }} />
+      <div className="h-2 bg-muted rounded-full overflow-hidden">
+        <div className={cn("h-full transition-all duration-700 rounded-full", color)} style={{ width: `${Math.min(value, 100)}%` }} />
       </div>
     </div>
   );
