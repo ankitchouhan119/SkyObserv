@@ -10,10 +10,9 @@ services:
     environment:
       SW_STORAGE: ${SW_STORAGE:-elasticsearch}
       SW_STORAGE_ES_CLUSTER_NODES: ${OPENSEARCH_HOST}
+      SW_STORAGE_ES_HTTP_PROTOCOL: https
       SW_ES_USER: ${OPENSEARCH_USER}
       SW_ES_PASSWORD: ${OPENSEARCH_PASSWORD}
-      SW_ES_HTTP_PROTOCOL: https
-      SW_ES_SSL_TRUST_ALL_CERTS: "true"
       SW_NAMESPACE: skywalking
       SW_HEALTH_CHECKER: default
       SW_TELEMETRY: none
