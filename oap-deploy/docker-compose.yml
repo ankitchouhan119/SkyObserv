@@ -1,0 +1,53 @@
+# SkyWalking OAP on Oracle Cloud VM
+# Usage on VM:
+#   cp .env.example .env   # fill OpenSearch credentials
+#   docker compose up -d
+
+services:
+  oap:
+    image: apache/skywalking-oap-server:10.0.0
+    container_name: skywalking-oap
+    restart: unless-stopped
+    environment:
+      SW_STORAGE: ${SW_STORAGE:-elasticsearch}
+      SW_STORAGE_ES_CLUSTER_NODES: ${OPENSEARCH_HOST}
+      SW_ES_USER: ${OPENSEARCH_USER}
+      SW_ES_PASSWORD: ${OPENSEARCH_PASSWORD}
+      SW_ES_HTTP_PROTOCOL: https
+      SW_ES_SSL_TRUST_ALL_CERTS: "true"
+      SW_NAMESPACE: skywalking
+      SW_HEALTH_CHECKER: default
+      SW_TELEMETRY: prometheus
+      JAVA_OPTS: "-Xms512m -Xmx1536m"
+    ports:
+      - "11800:11800"   # gRPC — agents (travobuds) report here
+      - "12800:12800"   # HTTP GraphQL — SkyObserv reads from here
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:12800/graphql || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+
+  # Optional: demo app to generate sample traces until travobuds agent is wired
+  demo-app:
+    image: eclipse-temurin:17-jre
+    container_name: skywalking-demo-app
+    restart: unless-stopped
+    profiles: ["demo"]
+    volumes:
+      - ../jarfiles:/jarfiles:ro
+    command: >
+      java
+      -javaagent:/jarfiles/skywalking-agent.jar
+      -Dskywalking.agent.service_name=online-bookstore
+      -Dskywalking.agent.instance_name=bookstore-1
+      -Dskywalking.collector.backend_service=oap:11800
+      -jar /jarfiles/webapp-runner.jar
+      --port 8080
+      /jarfiles/onlinebookstore.war
+    ports:
+      - "8080:8080"
+    depends_on:
+      oap:
+        condition: service_healthy

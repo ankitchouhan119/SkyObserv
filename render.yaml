@@ -1,32 +1,12 @@
 services:
 
-  # ── SkyWalking OAP Server ────────────────────────────────
+  # ── SkyWalking Mock OAP (Node.js — fits in 512MB easily) ─
   - type: web
     name: skywalking-oap
     runtime: docker
-    dockerfilePath: ./oap-deploy/Dockerfile
+    dockerfilePath: ./mock-oap/Dockerfile
     plan: free
-    healthCheckPath: /graphql
-    envVars:
-      # H2 in-memory storage — no external DB needed for OAP
-      - key: SW_STORAGE
-        value: h2
-
-      - key: SW_HEALTH_CHECKER
-        value: default
-
-      - key: SW_TELEMETRY
-        value: none
-
-      - key: SW_CORE_GRPC_THREAD_POOL_SIZE
-        value: "4"
-
-      - key: SW_CORE_REST_THREAD_POOL_SIZE
-        value: "4"
-
-      # Aggressively tuned to fit within Render's 512MB free tier
-      - key: JAVA_OPTS
-        value: "-Xms64m -Xmx360m -XX:MaxMetaspaceSize=96m -XX:CompressedClassSpaceSize=32m -XX:+UseSerialGC -XX:TieredStopAtLevel=1"
+    healthCheckPath: /health
 
   # ── SkyObserv App ────────────────────────────────────────
   - type: web

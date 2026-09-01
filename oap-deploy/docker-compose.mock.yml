@@ -1,0 +1,14 @@
+# Mock SkyWalking OAP — fits on E2.1.Micro (1 GB) easily
+# Deploy: docker compose -f docker-compose.mock.yml up -d
+
+services:
+  mock-oap:
+    build:
+      context: ../mock-oap
+      dockerfile: Dockerfile
+    container_name: skywalking-mock-oap
+    restart: unless-stopped
+    ports:
+      - "12800:12800"
+    environment:
+      PORT: 12800
