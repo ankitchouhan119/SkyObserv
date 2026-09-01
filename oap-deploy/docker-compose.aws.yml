@@ -1,0 +1,22 @@
+# SkyWalking OAP — AWS EC2 (2 GB RAM, Mumbai)
+# Usage: docker compose -f docker-compose.aws.yml up -d
+
+services:
+  oap:
+    image: apache/skywalking-oap-server:10.0.0
+    container_name: skywalking-oap
+    restart: unless-stopped
+    environment:
+      SW_STORAGE: h2
+      SW_HEALTH_CHECKER: default
+      SW_TELEMETRY: none
+      SW_CORE_GRPC_THREAD_POOL_SIZE: 4
+      SW_CORE_REST_THREAD_POOL_SIZE: 4
+      JAVA_OPTS: >-
+        -Xms512m -Xmx768m
+        -XX:MaxMetaspaceSize=128m
+        -XX:+UseSerialGC
+    ports:
+      - "11800:11800"
+      - "12800:12800"
+    mem_limit: 1536m
