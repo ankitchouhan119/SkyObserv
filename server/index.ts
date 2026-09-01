@@ -16,8 +16,14 @@ import {
   setupAuth,
   verifyUserCredentials,
 } from "./auth";
-import { assertGraphQLAccess, filterGraphQLResponse, isUnscopedTraceListQuery } from "./graphqlAccess";
-import { getAllowedServices, registerServiceForToken } from "./serviceAccess";
+import {
+  assertGraphQLAccess,
+  fetchGlobalTopology,
+  filterDatabasesForUser,
+  filterGraphQLResponse,
+  isUnscopedTraceListQuery,
+} from "./graphqlAccess";
+import { getAllowedServices, registerServiceForToken, unregisterServiceByIdForUser, unregisterServiceForUser } from "./serviceAccess";
 import { fetchTracesForAllowedServices } from "./traceQuery";
 import { generateApiToken } from "./tokens";
 import {
@@ -227,11 +233,44 @@ app.get("/api/profile/services", requireAuth, async (req, res) => {
 
   return res.json({
     services: rows.map((row) => ({
+      id: row.id,
       serviceName: row.serviceName,
       serviceInstance: row.serviceInstance,
       lastSeenAt: row.lastSeenAt,
     })),
   });
+});
+
+app.delete("/api/profile/services/:serviceName", requireAuth, async (req, res) => {
+  if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+
+  const serviceName = decodeURIComponent(req.params.serviceName ?? "");
+  const result = await unregisterServiceForUser(req.user, serviceName);
+  if ("error" in result) {
+    return res.status(400).json({ message: result.error });
+  }
+
+  return res.json({ ok: true });
+});
+
+app.post("/api/profile/services/unlink", requireAuth, async (req, res) => {
+  if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+
+  const serviceName = String(req.body?.serviceName ?? "").trim();
+  const registrationId = Number(req.body?.id);
+
+  let result;
+  if (Number.isFinite(registrationId) && registrationId > 0) {
+    result = await unregisterServiceByIdForUser(req.user, registrationId);
+  } else {
+    result = await unregisterServiceForUser(req.user, serviceName);
+  }
+
+  if ("error" in result) {
+    return res.status(400).json({ message: result.error });
+  }
+
+  return res.json({ ok: true });
 });
 
 app.get("/api/storage-backends", requireAuth, async (req, res) => {
@@ -507,6 +546,21 @@ app.post(api.graphql.proxy.path, requireAuth, async (req, res) => {
       const parsed = JSON.parse(text) as { data?: Record<string, unknown>; errors?: unknown[] };
       if (parsed.data) {
         parsed.data = filterGraphQLResponse(req.body, parsed.data, allowedServices);
+
+        if (
+          req.body.query?.includes("getAllDatabases") &&
+          Array.isArray(parsed.data.getAllDatabases) &&
+          !allowedServices.includes("*")
+        ) {
+          const topology = req.body.variables?.duration
+            ? await fetchGlobalTopology(SKYWALKING_ENDPOINT, req.body.variables.duration)
+            : { nodes: [], calls: [] };
+          parsed.data.getAllDatabases = filterDatabasesForUser(
+            parsed.data.getAllDatabases as Array<{ id?: string; name?: string }>,
+            allowedServices,
+            topology,
+          );
+        }
       }
       res.json(parsed);
     } catch {
