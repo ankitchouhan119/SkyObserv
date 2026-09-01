@@ -79,13 +79,33 @@ app.post(api.graphql.proxy.path, async (req, res) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(req.body),
+      signal: AbortSignal.timeout(90_000),
     });
 
-    const data = await response.json();
-    res.json(data);
+    const text = await response.text();
+
+    if (!response.ok) {
+      log(`OAP GraphQL HTTP ${response.status}: ${text.slice(0, 200)}`);
+      return res.status(response.status).json({
+        message: `SkyWalking OAP error (${response.status})`,
+        details: text.slice(0, 500),
+      });
+    }
+
+    try {
+      res.json(JSON.parse(text));
+    } catch {
+      log(`OAP returned non-JSON: ${text.slice(0, 200)}`);
+      res.status(502).json({
+        message: "SkyWalking OAP returned invalid JSON",
+        details: text.slice(0, 500),
+      });
+    }
   } catch (err) {
     console.error("GraphQL Proxy Error:", err);
-    res.status(500).json({ message: "GraphQL proxy failed" });
+    res.status(500).json({
+      message: "GraphQL proxy failed — OAP may be overloaded or still starting",
+    });
   }
 });
 

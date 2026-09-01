@@ -1,10 +1,5 @@
-# SkyWalking OAP — AWS EC2 + Aiven OpenSearch (persistent storage)
-#
-# Setup on EC2:
-#   cp .env.example .env    # fill OpenSearch credentials
-#   docker compose -f docker-compose.aws.yml up -d
-#
-# Requires t3.small (2 GB RAM) minimum.
+# Same as docker-compose.aws.yml — alias for t3.small (2 GB)
+# Usage: docker compose -f docker-compose.aws-2gb.yml up -d
 
 services:
   oap:
