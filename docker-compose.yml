@@ -1,0 +1,80 @@
+version: "3.9"
+
+# ─────────────────────────────────────────────────────────────
+#  SkyObserv – Full Stack
+#
+#  Usage:
+#    cp .env.example .env   # fill in your credentials
+#    docker compose up -d
+#
+#  Services:
+#    oap          → SkyWalking OAP (H2 storage, no Elasticsearch needed)
+#    demo-app     → Online Bookstore instrumented with SkyWalking agent
+#    skyobserv    → SkyObserv UI + API (http://localhost:5000)
+# ─────────────────────────────────────────────────────────────
+
+services:
+
+  # ── 1. SkyWalking OAP Server ──────────────────────────────
+  oap:
+    image: apache/skywalking-oap-server:10.0.0
+    container_name: skywalking-oap
+    restart: unless-stopped
+    environment:
+      SW_STORAGE: h2          # In-memory H2 — no Elasticsearch required
+      SW_HEALTH_CHECKER: default
+      SW_TELEMETRY: prometheus
+      JAVA_OPTS: "-Xms512m -Xmx1g"
+    ports:
+      - "11800:11800"          # gRPC — agents report here
+      - "12800:12800"          # HTTP GraphQL — SkyObserv reads from here
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:12800/graphql || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  # ── 2. Demo App (Online Bookstore + SkyWalking Agent) ─────
+  #    Generates real APM data: traces, metrics, slow SQL, errors
+  demo-app:
+    image: eclipse-temurin:17-jre-alpine
+    container_name: skywalking-demo-app
+    restart: unless-stopped
+    volumes:
+      - ./jarfiles:/jarfiles:ro
+    command: >
+      java
+      -javaagent:/jarfiles/skywalking-agent.jar
+      -Dskywalking.agent.service_name=online-bookstore
+      -Dskywalking.agent.instance_name=bookstore-1
+      -Dskywalking.collector.backend_service=oap:11800
+      -jar /jarfiles/webapp-runner.jar
+      --port 8080
+      /jarfiles/onlinebookstore.war
+    ports:
+      - "8080:8080"
+    depends_on:
+      oap:
+        condition: service_healthy
+
+  # ── 3. SkyObserv App ──────────────────────────────────────
+  skyobserv:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: skyobserv
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      # Override SkyWalking endpoint to point to the OAP container
+      SKYWALKING_ENDPOINT: http://oap:12800
+      NODE_ENV: production
+      PORT: 5000
+      # Aiven uses self-signed certs
+      NODE_TLS_REJECT_UNAUTHORIZED: "0"
+    ports:
+      - "5000:5000"
+    depends_on:
+      oap:
+        condition: service_healthy

@@ -4,6 +4,9 @@ import { api } from "@shared/routes";
 import path from "path";
 import { fileURLToPath } from "url";
 import "dotenv/config";
+import { db } from "./db";
+import { userPreferences } from "@shared/schema";
+import { eq } from "drizzle-orm";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -32,17 +35,37 @@ app.get("/config", (_, res) => {
 
 /* ---------------- API ROUTES ---------------- */
 
-const memoryStorage: Record<string, any> = {};
-
-app.get(api.preferences.get.path, (req, res) => {
-  const key = req.params.key;
-  res.json(memoryStorage[key] || { key, value: {} });
+app.get(api.preferences.get.path, async (req, res) => {
+  try {
+    const key = String(req.params.key);
+    const rows = await db
+      .select()
+      .from(userPreferences)
+      .where(eq(userPreferences.key, key))
+      .limit(1);
+    res.json(rows[0] ?? { key, value: {} });
+  } catch (err) {
+    log(`DB read error: ${err}`);
+    res.status(500).json({ error: "Failed to fetch preference" });
+  }
 });
 
-app.post(api.preferences.save.path, (req, res) => {
-  const { key, value } = req.body;
-  memoryStorage[key] = { key, value, updatedAt: new Date() };
-  res.json(memoryStorage[key]);
+app.post(api.preferences.save.path, async (req, res) => {
+  try {
+    const { key, value } = req.body;
+    const [row] = await db
+      .insert(userPreferences)
+      .values({ key, value })
+      .onConflictDoUpdate({
+        target: userPreferences.key,
+        set: { value, updatedAt: new Date() },
+      })
+      .returning();
+    res.json(row);
+  } catch (err) {
+    log(`DB write error: ${err}`);
+    res.status(500).json({ error: "Failed to save preference" });
+  }
 });
 
 const SKYWALKING_ENDPOINT =
