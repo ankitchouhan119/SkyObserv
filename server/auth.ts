@@ -211,7 +211,10 @@ export function setupAuth(app: Express): void {
       cookie: {
         httpOnly: true,
         sameSite: "lax",
-        secure: process.env.NODE_ENV === "production",
+        secure:
+          process.env.SESSION_COOKIE_SECURE !== undefined
+            ? process.env.SESSION_COOKIE_SECURE === "true"
+            : process.env.NODE_ENV === "production",
         maxAge: 7 * 24 * 60 * 60 * 1000,
       },
     }),

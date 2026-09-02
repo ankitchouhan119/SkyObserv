@@ -3,6 +3,7 @@ import express from "express";
 import { createServer } from "http";
 import { api } from "@shared/routes";
 import path from "path";
+import fs from "fs";
 import { fileURLToPath } from "url";
 import { db } from "./db";
 import { userPreferences } from "@shared/schema";
@@ -61,7 +62,9 @@ const app = express();
 const httpServer = createServer(app);
 
 const PORT = parseInt(process.env.PORT || "5000", 10);
-const isDev = process.env.NODE_ENV !== "production";
+const distPath = path.join(__dirname, "../dist/public");
+const hasProductionBuild = fs.existsSync(path.join(distPath, "index.html"));
+const useVite = !hasProductionBuild && process.env.NODE_ENV !== "production";
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -672,13 +675,11 @@ app.post(api.graphql.proxy.path, requireAuth, async (req, res) => {
       }
     }
 
-    if (isDev) {
+    if (useVite) {
       const { setupVite } = await import("./vite");
       await setupVite(httpServer, app);
       log("Running in DEV mode with Vite");
     } else {
-      const distPath = path.join(__dirname, "../dist/public");
-
       app.use(express.static(distPath));
 
       app.use((req, res, next) => {
