@@ -1,4 +1,6 @@
 resource "aws_security_group" "alb" {
+  count = var.enable_alb ? 1 : 0
+
   name   = "${var.project_name}-alb-sg"
   vpc_id = aws_vpc.main.id
 

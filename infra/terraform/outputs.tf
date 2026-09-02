@@ -1,5 +1,6 @@
 output "alb_dns_name" {
-  value = aws_lb.main.dns_name
+  value       = var.enable_alb ? aws_lb.main[0].dns_name : null
+  description = "Null when enable_alb = false"
 }
 
 output "app_instance_id" {
@@ -15,5 +16,3 @@ output "rds_endpoint" {
   sensitive = true
 }
 
-# SkyWalking OAP runs on a separate manually-provisioned EC2 (see oap-deploy/)
-# Point SKYWALKING_ENDPOINT in skyobserv.env to that instance's IP

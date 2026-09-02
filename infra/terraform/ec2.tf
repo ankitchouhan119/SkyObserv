@@ -22,43 +22,61 @@ resource "aws_instance" "app" {
   }
 
   user_data = <<-EOF
-    #!/bin/bash
-    dnf update -y
-    dnf install -y docker amazon-cloudwatch-agent
-    systemctl enable --now docker
-    usermod -aG docker ec2-user
+		#!/bin/bash
+		dnf update -y
+		dnf install -y docker amazon-cloudwatch-agent
+		systemctl enable --now docker
+		usermod -aG docker ec2-user
+		mkdir -p /var/log/skyobserv
+		chmod 755 /var/log/skyobserv
 
-    cat > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json << 'CWCONFIG'
-    {
-      "logs": {
-        "logs_collected": {
-          "files": {
-            "collect_list": [
-              {
-                "file_path": "/var/lib/docker/containers/**/*-json.log",
-                "log_group_name": "/skyobserv/app",
-                "log_stream_name": "{instance_id}"
-              }
-            ]
-          }
-        }
-      },
-      "metrics": {
-        "metrics_collected": {
-          "mem": { "measurement": ["mem_used_percent"] },
-          "disk": {
-            "measurement": ["disk_used_percent"],
-            "resources": ["/"]
-          }
-        }
-      }
-    }
-    CWCONFIG
+		cat > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json << 'CWCONFIG'
+		{
+		  "agent": {
+		    "metrics_collection_interval": 60
+		  },
+		  "logs": {
+		    "logs_collected": {
+		      "files": {
+		        "collect_list": [
+		          {
+		            "file_path": "/var/lib/docker/containers/**/*-json.log",
+		            "log_group_name": "/skyobserv/app",
+		            "log_stream_name": "{instance_id}"
+		          },
+		          {
+		            "file_path": "/var/log/skyobserv/access.log",
+		            "log_group_name": "/skyobserv/access",
+		            "log_stream_name": "{instance_id}"
+		          },
+		          {
+		            "file_path": "/var/log/messages",
+		            "log_group_name": "/skyobserv/system",
+		            "log_stream_name": "{instance_id}"
+		          }
+		        ]
+		      }
+		    }
+		  },
+		  "metrics": {
+		    "append_dimensions": {
+		      "InstanceId": "$${aws:InstanceId}"
+		    },
+		    "metrics_collected": {
+		      "mem": { "measurement": ["mem_used_percent"] },
+		      "disk": {
+		        "measurement": ["disk_used_percent"],
+		        "resources": ["/"]
+		      }
+		    }
+		  }
+		}
+		CWCONFIG
 
-    /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
-      -a fetch-config -m ec2 -s \
-      -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
-  EOF
+		/opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
+		  -a fetch-config -m ec2 -s \
+		  -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
+	EOF
 
   tags = {
     Name = "${var.project_name}-app"
