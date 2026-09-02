@@ -1,3 +1,8 @@
 aws_region   = "ap-south-1"
 project_name = "skyobserv"
 db_password  = "CHANGE_ME"
+key_name     = "skyobserv"
+
+# Set true to provision ALB (~$16/mo) or NAT (~$32/mo). Code stays in repo either way.
+enable_alb = false
+enable_nat = false

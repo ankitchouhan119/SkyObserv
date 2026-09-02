@@ -40,6 +40,7 @@ import {
   getSkyWalkingHttpCollectorAddress,
 } from "./skywalkingConfig";
 import { updateUserProfile } from "./profileUpdate";
+import { requestLogMiddleware } from "./requestLog";
 import {
   createStorageBackendForUser,
   deleteStorageBackendForUser,
@@ -68,6 +69,7 @@ const useVite = !hasProductionBuild && process.env.NODE_ENV !== "production";
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+app.use(requestLogMiddleware);
 
 setupAuth(app);
 

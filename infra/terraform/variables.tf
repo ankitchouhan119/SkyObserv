@@ -38,13 +38,13 @@ variable "key_name" {
   default = ""
 }
 
-# existing infra - used for CloudWatch dashboards without applying new resources
-variable "existing_instance_id" {
-  type    = string
-  default = ""
+# ALB and NAT are off by default to keep costs down during dev
+variable "enable_alb" {
+  type    = bool
+  default = false
 }
 
-variable "existing_rds_identifier" {
-  type    = string
-  default = ""
+variable "enable_nat" {
+  type    = bool
+  default = false
 }

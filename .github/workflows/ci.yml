@@ -20,10 +20,11 @@ jobs:
       - name: Run tests
         run: npm test
 
-      - name: TypeScript check
+      - name: Type check
+        # non-zero exit is fine here, we just want to surface errors in the log
         run: npm run check || true
 
-      - name: Dependency audit
+      - name: Audit dependencies
         run: npm audit --audit-level=high
 
       - name: Notify on failure
@@ -34,7 +35,7 @@ jobs:
           [ -n "$SLACK_WEBHOOK" ] || exit 0
           curl -s -X POST "$SLACK_WEBHOOK" \
             -H 'Content-type: application/json' \
-            -d '{"text":"CI failed on PR #${{ github.event.number }} (${{ github.head_ref }})"}'
+            -d '{"text":"CI failed — PR #${{ github.event.number }} (${{ github.head_ref }})"}'
 
   scan:
     runs-on: ubuntu-latest
@@ -44,8 +45,8 @@ jobs:
       - name: Build image
         run: docker build -t skyobserv:pr .
 
-      - name: Trivy vulnerability scan
-        uses: aquasecurity/trivy-action@master
+      - name: Trivy scan
+        uses: aquasecurity/trivy-action@0.28.0
         with:
           image-ref: skyobserv:pr
           exit-code: 1
@@ -60,4 +61,4 @@ jobs:
           [ -n "$SLACK_WEBHOOK" ] || exit 0
           curl -s -X POST "$SLACK_WEBHOOK" \
             -H 'Content-type: application/json' \
-            -d '{"text":"Trivy scan failed on PR #${{ github.event.number }}"}'
+            -d '{"text":"Trivy CRITICAL vuln found — PR #${{ github.event.number }}"}'
