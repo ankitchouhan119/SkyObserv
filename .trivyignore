@@ -1,0 +1,5 @@
+# esbuild gobinary - golang stdlib CVE in build tool, not in runtime app
+CVE-2025-68121
+
+# tar in npm's own internal node_modules, not our dependency
+CVE-2026-59873

@@ -353,6 +353,14 @@ The application supports natural language queries through TamboAI. Here are exam
 │   ├── demoApp.jar                 # Demo java app jarfile
 │   └── skywalking-agent.jar        # Agent Jar file
 │
+├── oap-deploy/                     # Manual SkyWalking OAP on EC2 (docker script)
+│   ├── ec2-docker-run.sh
+│   └── .env.example
+│
+├── infra/                          # AWS Terraform (VPC, ALB, EC2, RDS)
+│   ├── README.md
+│   └── terraform/
+│
 ├── shared/                          # Shared Codebase
 │   ├── routes.ts                   # Unified Route definitions
 │   └── schema.ts                   # Data structures
@@ -364,6 +372,12 @@ The application supports natural language queries through TamboAI. Here are exam
 ├── vite.config.ts                  # Vite Bundler Configuration
 └── README.md                       # Documentation
 ```
+
+### AWS infrastructure (Terraform)
+
+For provisioning VPC, load balancer, app EC2, and RDS on AWS see [`infra/README.md`](infra/README.md).
+
+OAP-only manual deploy (current setup): [`oap-deploy/ec2-docker-run.sh`](oap-deploy/ec2-docker-run.sh).
 
 ## Development
 
