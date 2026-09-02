@@ -3,7 +3,7 @@ name: CD
 on:
   push:
     branches: [main]
-
+  workflow_dispatch:
 env:
   # GHCR requires lowercase image names
   IMAGE: ghcr.io/${{ github.repository_owner }}/skyobserv
@@ -56,9 +56,10 @@ jobs:
               exit 1
             fi
             printf '%s' "$GHCR_TOKEN" | sudo docker login ghcr.io -u "$GHCR_USER" --password-stdin
+            sudo docker system prune -af || true
             sudo docker pull "$IMAGE_TAG"
-            sudo docker stop skyobserv || true
-            sudo docker rm skyobserv || true
+            sudo docker stop skyobserv 2>/dev/null || true
+            sudo docker rm skyobserv 2>/dev/null || true
             sudo docker run -d \
               --name skyobserv \
               --restart always \
@@ -68,8 +69,11 @@ jobs:
 
       - name: Notify Slack
         if: always()
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
         run: |
-          curl -s -X POST "${{ secrets.SLACK_WEBHOOK }}" \
+          [ -n "$SLACK_WEBHOOK" ] || exit 0
+          curl -s -X POST "$SLACK_WEBHOOK" \
             -H 'Content-type: application/json' \
             -d '{"text":"Staging deploy ${{ job.status }} — ${{ github.repository }}@${{ github.sha }}"}'
 
@@ -100,9 +104,10 @@ jobs:
               exit 1
             fi
             printf '%s' "$GHCR_TOKEN" | sudo docker login ghcr.io -u "$GHCR_USER" --password-stdin
+            sudo docker system prune -af || true
             sudo docker pull "$IMAGE_TAG"
-            sudo docker stop skyobserv || true
-            sudo docker rm skyobserv || true
+            sudo docker stop skyobserv 2>/dev/null || true
+            sudo docker rm skyobserv 2>/dev/null || true
             sudo docker run -d \
               --name skyobserv \
               --restart always \
@@ -112,7 +117,10 @@ jobs:
 
       - name: Notify Slack
         if: always()
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
         run: |
-          curl -s -X POST "${{ secrets.SLACK_WEBHOOK }}" \
+          [ -n "$SLACK_WEBHOOK" ] || exit 0
+          curl -s -X POST "$SLACK_WEBHOOK" \
             -H 'Content-type: application/json' \
             -d '{"text":"Production deploy ${{ job.status }} — ${{ github.repository }}@${{ github.sha }}"}'
