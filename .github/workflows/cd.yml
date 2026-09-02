@@ -36,18 +36,27 @@ jobs:
     steps:
       - name: Deploy to staging
         uses: appleboy/ssh-action@v1
+        env:
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          GHCR_USER: ${{ github.repository_owner }}
+          IMAGE_TAG: ${{ env.IMAGE }}:${{ github.sha }}
         with:
           host: ${{ secrets.STAGING_HOST }}
           username: ec2-user
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: GHCR_TOKEN,GHCR_USER,IMAGE_TAG
           script: |
             set -e
             if ! command -v docker &>/dev/null; then
               sudo dnf install -y docker
               sudo systemctl enable --now docker
             fi
-            echo "${{ secrets.GHCR_TOKEN }}" | sudo docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
-            sudo docker pull ${{ env.IMAGE }}:${{ github.sha }}
+            if [ -z "$GHCR_TOKEN" ]; then
+              echo "GHCR_TOKEN secret missing"
+              exit 1
+            fi
+            printf '%s' "$GHCR_TOKEN" | sudo docker login ghcr.io -u "$GHCR_USER" --password-stdin
+            sudo docker pull "$IMAGE_TAG"
             sudo docker stop skyobserv || true
             sudo docker rm skyobserv || true
             sudo docker run -d \
@@ -55,7 +64,7 @@ jobs:
               --restart always \
               -p 5000:5000 \
               --env-file /home/ec2-user/skyobserv.env \
-              ${{ env.IMAGE }}:${{ github.sha }}
+              "$IMAGE_TAG"
 
       - name: Notify Slack
         if: always()
@@ -71,18 +80,27 @@ jobs:
     steps:
       - name: Deploy to production
         uses: appleboy/ssh-action@v1
+        env:
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          GHCR_USER: ${{ github.repository_owner }}
+          IMAGE_TAG: ${{ env.IMAGE }}:${{ github.sha }}
         with:
           host: ${{ secrets.PROD_HOST }}
           username: ec2-user
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: GHCR_TOKEN,GHCR_USER,IMAGE_TAG
           script: |
             set -e
             if ! command -v docker &>/dev/null; then
               sudo dnf install -y docker
               sudo systemctl enable --now docker
             fi
-            echo "${{ secrets.GHCR_TOKEN }}" | sudo docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
-            sudo docker pull ${{ env.IMAGE }}:${{ github.sha }}
+            if [ -z "$GHCR_TOKEN" ]; then
+              echo "GHCR_TOKEN secret missing"
+              exit 1
+            fi
+            printf '%s' "$GHCR_TOKEN" | sudo docker login ghcr.io -u "$GHCR_USER" --password-stdin
+            sudo docker pull "$IMAGE_TAG"
             sudo docker stop skyobserv || true
             sudo docker rm skyobserv || true
             sudo docker run -d \
@@ -90,7 +108,7 @@ jobs:
               --restart always \
               -p 5000:5000 \
               --env-file /home/ec2-user/skyobserv.env \
-              ${{ env.IMAGE }}:${{ github.sha }}
+              "$IMAGE_TAG"
 
       - name: Notify Slack
         if: always()
