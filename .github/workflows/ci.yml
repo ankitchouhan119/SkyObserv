@@ -28,8 +28,11 @@ jobs:
 
       - name: Notify on failure
         if: failure()
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
         run: |
-          curl -s -X POST "${{ secrets.SLACK_WEBHOOK }}" \
+          [ -n "$SLACK_WEBHOOK" ] || exit 0
+          curl -s -X POST "$SLACK_WEBHOOK" \
             -H 'Content-type: application/json' \
             -d '{"text":"CI failed on PR #${{ github.event.number }} (${{ github.head_ref }})"}'
 
@@ -51,7 +54,10 @@ jobs:
 
       - name: Notify on failure
         if: failure()
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
         run: |
-          curl -s -X POST "${{ secrets.SLACK_WEBHOOK }}" \
+          [ -n "$SLACK_WEBHOOK" ] || exit 0
+          curl -s -X POST "$SLACK_WEBHOOK" \
             -H 'Content-type: application/json' \
             -d '{"text":"Trivy scan failed on PR #${{ github.event.number }}"}'
