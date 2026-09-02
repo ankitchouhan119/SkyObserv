@@ -620,13 +620,13 @@
     "semantic_hash": ""
   },
   "server/index.ts": {
-    "mtime": 1788290621.0830429,
-    "ast_hash": "14c83215e36b8e6ebcfb49e95c79ee67",
+    "mtime": 1788290852.375895,
+    "ast_hash": "beeb8f286b7694275a9c6f18ea9eae1c",
     "semantic_hash": ""
   },
   "server/vite.ts": {
-    "mtime": 1788237467.2010283,
-    "ast_hash": "4e759c2093ce509d26c3931d04315c5d",
+    "mtime": 1788290846.9408607,
+    "ast_hash": "4900f284241ee6c043dd138c4d3d1e55",
     "semantic_hash": ""
   },
   "shared/routes.ts": {
@@ -785,13 +785,13 @@
     "semantic_hash": ""
   },
   "client/src/pages/ProfilePage.tsx": {
-    "mtime": 1788290633.5680666,
-    "ast_hash": "d1812d61d16fd6a7f9e29d7ce84361c9",
+    "mtime": 1788290858.493239,
+    "ast_hash": "2351cc5143a33fc79f561dff703abc90",
     "semantic_hash": ""
   },
   "server/serviceAccess.ts": {
-    "mtime": 1788290617.902689,
-    "ast_hash": "58ee7ee8e4ddebb43ff1aa9b0ed5bfe8",
+    "mtime": 1788290853.9724834,
+    "ast_hash": "e0478407344601127c87649b5111d9e6",
     "semantic_hash": ""
   },
   "server/tokens.ts": {

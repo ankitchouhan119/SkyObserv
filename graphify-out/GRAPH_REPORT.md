@@ -1,16 +1,16 @@
 # Graph Report - SkyObserv  (2026-09-02)
 
 ## Corpus Check
-- 270 files · ~366,478 words
+- 280 files · ~367,982 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 3266 nodes · 4814 edges · 281 communities (168 shown, 113 thin omitted)
+- 3276 nodes · 4823 edges · 280 communities (168 shown, 112 thin omitted)
 - Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 47 edges (avg confidence: 0.52)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `07e3e1f4`
+- Built from commit: `32266710`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -264,7 +264,6 @@
 - slides-create.md
 - create.md
 - .test_add_components_success
-- md
 - .test_add_all_components_no_config
 - none
 - K8sResourceDrawer.tsx
@@ -312,37 +311,37 @@
   client/src/components/ui/chart.tsx → package.json
 - `useFormField()` --references--> `react`  [EXTRACTED]
   client/src/components/ui/form.tsx → package.json
-- `CodeHeader()` --references--> `react`  [EXTRACTED]
-  client/src/lib/markdownComponents.tsx → package.json
+- `AppLayout()` --references--> `react`  [EXTRACTED]
+  client/src/components/layout/AppLayout.tsx → package.json
 
 ## Import Cycles
 - None detected.
 
-## Communities (281 total, 113 thin omitted)
+## Communities (280 total, 112 thin omitted)
 
 ### Community 0 - "message-thread-full.tsx"
 Cohesion: 0.08
-Nodes (45): read_rows(), TestAccessibilityGuidance, TestChartsTypographyAndIcons, TestCurrentReactGuidance, TestSemanticColors, _catalog_date(), _check_app_interface_contract(), _check_catalog_contract() (+37 more)
+Nodes (46): read_rows(), TestAccessibilityGuidance, TestChartsTypographyAndIcons, TestCurrentReactGuidance, TestSemanticColors, _catalog_date(), _check_app_interface_contract(), _check_catalog_contract() (+38 more)
 
 ### Community 1 - "card.tsx"
-Cohesion: 0.06
-Nodes (37): GET_ALL_DATABASES, GET_DATABASE_METRICS, GET_TRACE_DETAILS, GET_TRACES_FOR_DB, GET_ALL_SERVICES, GET_SERVICE_ENDPOINTS, GET_SERVICE_INSTANCES, GET_GLOBAL_TOPOLOGY (+29 more)
+Cohesion: 0.09
+Nodes (24): GET_DATABASE_METRICS, GET_ALL_SERVICES, GET_SERVICE_ENDPOINTS, GET_SERVICE_INSTANCES, GET_GLOBAL_TOPOLOGY, GET_SERVICE_TOPOLOGY, GET_TOPOLOGY, toJsonSchema() (+16 more)
 
 ### Community 2 - "tambo-tools.ts"
-Cohesion: 0.18
-Nodes (12): GET_LINEAR_INT_VALUES, GET_SERVICE_METRICS, METRICS, MetricChart(), MetricChartProps, DrawerContent(), TabsContent, TabsList (+4 more)
+Cohesion: 0.11
+Nodes (22): GET_ALL_DATABASES, GET_TRACE_DETAILS, GET_TRACES_FOR_DB, GET_LINEAR_INT_VALUES, GET_SERVICE_METRICS, METRICS, MetricChart(), MetricChartProps (+14 more)
 
 ### Community 3 - "devDependencies"
 Cohesion: 0.13
 Nodes (15): autoprefixer, drizzle-kit, devDependencies, autoprefixer, drizzle-kit, @replit/vite-plugin-cartographer, tsx, @types/passport-local (+7 more)
 
 ### Community 4 - "cn"
-Cohesion: 0.08
+Cohesion: 0.07
 Nodes (43): PodCard(), ResizableHandle(), ResizablePanelGroup(), Separator, SheetContent, SheetContentProps, SheetDescription, SheetFooter() (+35 more)
 
 ### Community 5 - "SkyObserv - Observability"
-Cohesion: 0.06
-Nodes (35): 1. Clone the Repository, 2. Install Dependencies, 3. Docker Build, 3. Environment Configuration, Access the Application, Adding New AI Tools, Adding New TamboAI Components, APM & Monitoring (+27 more)
+Cohesion: 0.05
+Nodes (42): AWS infrastructure (Terraform), Notes, Quick start, Remote state (optional), Teardown, What gets created, 1. Clone the Repository, 2. Install Dependencies (+34 more)
 
 ### Community 6 - "compilerOptions"
 Cohesion: 0.07
@@ -353,12 +352,12 @@ Cohesion: 0.12
 Nodes (24): Toast, ToastAction, ToastActionElement, ToastClose, ToastDescription, ToastProps, ToastTitle, toastVariants (+16 more)
 
 ### Community 8 - "AppLayout.tsx"
-Cohesion: 0.08
-Nodes (37): GenerationStageProps, MessageGenerationStage(), MessageInput, MessageInputError(), MessageInputProps, MessageInputSubmitButton(), MessageInputTextarea(), MessageInputToolbar() (+29 more)
+Cohesion: 0.07
+Nodes (43): GenerationStageProps, MessageGenerationStage(), MessageInput, MessageInputError(), MessageInputProps, MessageInputSubmitButton(), MessageInputTextarea(), MessageInputToolbar() (+35 more)
 
 ### Community 9 - "utils.ts"
-Cohesion: 0.04
-Nodes (31): K8sPodTopologyPanel(), Props, TopologyNode(), ThreadDropdown, ThreadDropdownProps, Alert, AlertDescription, AlertTitle (+23 more)
+Cohesion: 0.05
+Nodes (24): ThreadDropdown, ThreadDropdownProps, TooltipContent, TooltipProps, Alert, AlertDescription, AlertTitle, alertVariants (+16 more)
 
 ### Community 10 - "index.ts"
 Cohesion: 0.16
@@ -366,15 +365,15 @@ Nodes (26): createUser(), CreateUserInput, ensureAuthSchema(), ensureBootstrapAd
 
 ### Community 11 - "K8sNamespaceDetailPage.tsx"
 Cohesion: 0.19
-Nodes (12): Input, SelectContent, SelectItem, SelectLabel, SelectScrollDownButton, SelectScrollUpButton, SelectSeparator, SelectTrigger (+4 more)
+Nodes (10): AccordionContent, AccordionItem, AccordionTrigger, FAQS, FEATURES, LandingPage(), STACKS, STATS (+2 more)
 
 ### Community 12 - "useDurationStore"
-Cohesion: 0.07
-Nodes (29): client, httpLink, AppShell(), AuthenticatedApp(), isPublicPath(), FOOTER_LINKS, PublicLayout(), PublicLayoutProps (+21 more)
+Cohesion: 0.08
+Nodes (36): AuthenticatedApp(), CustomRangePicker(), FOOTER_LINKS, PublicLayout(), PublicLayoutProps, AddStorageBackendDialog(), Props, Button (+28 more)
 
 ### Community 13 - "dependencies"
 Cohesion: 0.11
-Nodes (19): class-variance-authority, clsx, input-otp, dependencies, class-variance-authority, clsx, input-otp, @radix-ui/react-accordion (+11 more)
+Nodes (19): clsx, @getbrevo/brevo, input-otp, dependencies, clsx, @getbrevo/brevo, input-otp, @radix-ui/react-accordion (+11 more)
 
 ### Community 14 - "index.js"
 Cohesion: 0.14
@@ -389,8 +388,8 @@ Cohesion: 0.18
 Nodes (7): _palette_is_dark(), WCAG relative luminance of a #RRGGBB string, or None if unparseable., True when a colors.csv row's Background is a dark surface., _relative_luminance(), The exact reproduction from issue #428., TestEndToEndCoherence, TestLuminance
 
 ### Community 17 - "command.tsx"
-Cohesion: 0.19
-Nodes (7): BM25, BM25 ranking algorithm for text search, Lowercase, normalize synonyms, split, remove punctuation, filter stopwords, Build BM25 index from documents, Suggest complete public identities so a retry can bypass score thresholds., _suggest_identities(), TestTokenizer
+Cohesion: 0.11
+Nodes (12): BM25, _passes_threshold(), _query_coverage(), BM25 ranking algorithm for text search, Lowercase, normalize synonyms, split, remove punctuation, filter stopwords, Build BM25 index from documents, Score all documents against query, All indexed terms, for suggestion/typo-recovery purposes. (+4 more)
 
 ### Community 18 - "menubar.tsx"
 Cohesion: 0.12
@@ -422,7 +421,7 @@ Nodes (27): DatabaseListCard(), DBInsightsCard(), DetailedMetricsCard(), Props, 
 
 ### Community 25 - "dropdown-menu.tsx"
 Cohesion: 0.08
-Nodes (32): CustomRangePicker(), DurationSelector(), ranges, OPTIONS, ThemeToggle(), AppLayout(), AppLayoutProps, TAMBO_SYSTEM_PROMPT (+24 more)
+Nodes (30): DurationSelector(), ranges, OPTIONS, ThemeToggle(), AppLayout(), AppLayoutProps, MessageThreadCollapsible, TAMBO_SYSTEM_PROMPT (+22 more)
 
 ### Community 26 - "TracesPage.tsx"
 Cohesion: 0.05
@@ -433,8 +432,8 @@ Cohesion: 0.20
 Nodes (9): ContextMenuCheckboxItem, ContextMenuContent, ContextMenuItem, ContextMenuLabel, ContextMenuRadioItem, ContextMenuSeparator, ContextMenuShortcut(), ContextMenuSubContent (+1 more)
 
 ### Community 28 - "useDurationStore.ts"
-Cohesion: 0.07
-Nodes (42): BM25, detect_domain(), get_cip_brief(), _load_csv(), Load CSV and return list of dicts, Core search function using BM25, Auto-detect the most relevant domain from query, Main search function with auto-domain detection (+34 more)
+Cohesion: 0.08
+Nodes (37): detect_domain(), get_cip_brief(), _load_csv(), Load CSV and return list of dicts, Core search function using BM25, Auto-detect the most relevant domain from query, Main search function with auto-domain detection, Search across all domains and combine results (+29 more)
 
 ### Community 29 - "alert-dialog.tsx"
 Cohesion: 0.05
@@ -449,11 +448,11 @@ Cohesion: 0.25
 Nodes (6): DrawerContent, DrawerDescription, DrawerFooter(), DrawerHeader(), DrawerOverlay, DrawerTitle
 
 ### Community 32 - "drawer.tsx"
-Cohesion: 0.25
-Nodes (9): _exact_match_diagnostic(), _legacy_successor_guidance(), _normalize(), Apply longest-first synonym substitution at token boundaries., Whether a stack query explicitly targets an older framework generation., Choose one coherent applicability generation for stack retrieval., Prefer the explicit successor row for a brand-new app on legacy-only stacks., _stack_query_requests_legacy() (+1 more)
+Cohesion: 0.20
+Nodes (6): client, httpLink, AppShell(), isPublicPath(), tools, K8sPodDetailPage()
 
 ### Community 33 - "navigation-menu.tsx"
-Cohesion: 0.15
+Cohesion: 0.14
 Nodes (6): read_rows(), split_values(), style_identities(), TestGeneratedCatalogContract, TestLandingAndStackContract, TestStyleIdentityContract
 
 ### Community 34 - "sheet.tsx"
@@ -473,24 +472,24 @@ Cohesion: 0.33
 Nodes (3): viteLogger, __dirname, __filename
 
 ### Community 38 - "alert.tsx"
-Cohesion: 0.12
-Nodes (13): ChartConfig, ChartContainer, ChartContext, ChartContextProps, ChartLegendContent, ChartTooltipContent, THEMES, useChart() (+5 more)
+Cohesion: 0.18
+Nodes (8): ChartConfig, ChartContainer, ChartContext, ChartContextProps, ChartLegendContent, ChartTooltipContent, THEMES, useChart()
 
 ### Community 40 - "avatar.tsx"
-Cohesion: 0.33
-Nodes (5): ToggleGroup, ToggleGroupContext, ToggleGroupItem, Toggle, toggleVariants
+Cohesion: 0.25
+Nodes (7): NavigationMenu, NavigationMenuContent, NavigationMenuIndicator, NavigationMenuList, NavigationMenuTrigger, navigationMenuTriggerStyle, NavigationMenuViewport
 
 ### Community 44 - "@apollo/client"
-Cohesion: 0.14
-Nodes (7): format_markdown(), generate_design_system(), Format design system as markdown., Main entry point for design system generation.      Args:         query: Search, TestBm25CoreBehavior, TestDiagnosticsContracts, TestPersistence
+Cohesion: 0.20
+Nodes (6): BM25, BM25 ranking algorithm for text search, Lowercase, split, remove punctuation, filter short words, Build BM25 index from documents, Score all documents against query, TestDiagnosticsContracts
 
 ### Community 45 - "class-variance-authority"
-Cohesion: 0.14
-Nodes (14): GET_TRACE_DETAILS, GET_TRACES, TraceList(), TraceListProps, Badge(), BadgeProps, badgeVariants, ScrollArea (+6 more)
+Cohesion: 0.11
+Nodes (18): GET_TRACE_DETAILS, GET_TRACES, TraceList(), TraceListProps, ScrollArea, ScrollBar, SelectContent, SelectItem (+10 more)
 
 ### Community 47 - "clsx"
-Cohesion: 0.09
-Nodes (28): GET_EVENTS, GET_INSTANCE_DETAIL, GET_K8S_DASHBOARD, GET_K8S_NODES, GET_MQE_METRICS, GET_NODE_INSTANCES, GET_NODE_METRICS, GET_SERVICE_INSTANCES (+20 more)
+Cohesion: 0.07
+Nodes (35): GET_EVENTS, GET_INSTANCE_DETAIL, GET_K8S_DASHBOARD, GET_K8S_NODES, GET_MQE_METRICS, GET_NODE_INSTANCES, GET_NODE_METRICS, GET_SERVICE_INSTANCES (+27 more)
 
 ### Community 50 - "date-fns"
 Cohesion: 0.14
@@ -525,16 +524,16 @@ Cohesion: 0.60
 Nodes (5): $type, $value, border, border, border
 
 ### Community 96 - "react-force-graph-2d"
-Cohesion: 0.12
-Nodes (23): ansi_ljust(), _detect_page_type(), format_ascii_box(), format_master_md(), format_page_override_md(), _generate_intelligent_overrides(), hex_to_ansi(), persist_design_system() (+15 more)
+Cohesion: 0.08
+Nodes (30): ansi_ljust(), _detect_page_type(), format_ascii_box(), format_markdown(), format_master_md(), format_page_override_md(), generate_design_system(), _generate_intelligent_overrides() (+22 more)
 
 ### Community 105 - "tw-animate-css"
 Cohesion: 0.25
 Nodes (7): Breadcrumb, BreadcrumbEllipsis(), BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator()
 
 ### Community 117 - "alert.tsx"
-Cohesion: 0.67
-Nodes (4): padding-y, padding-y, $type, $value
+Cohesion: 0.29
+Nodes (8): padding-y, input, $type, $value, focus-ring, padding-y, $type, $value
 
 ### Community 118 - "input-otp.tsx"
 Cohesion: 0.06
@@ -545,7 +544,7 @@ Cohesion: 0.06
 Nodes (32): Accordion, Alert, Alert Dialog, Avatar, Badge, Button, Card, Checkbox (+24 more)
 
 ### Community 121 - "drizzle-orm"
-Cohesion: 0.18
+Cohesion: 0.17
 Nodes (5): DesignSystemGenerator, Generates design system recommendations from aggregated searches., Load reasoning rules from CSV., TestReasoningMatch, TestReasoningContract
 
 ### Community 123 - "@radix-ui/react-toggle-group"
@@ -553,12 +552,12 @@ Cohesion: 0.80
 Nodes (4): getClient(), getConfig(), isEmailConfigured(), sendPasswordResetOtp()
 
 ### Community 124 - "react-icons"
-Cohesion: 0.67
-Nodes (3): destructive, $type, $value
+Cohesion: 0.40
+Nodes (4): InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot
 
 ### Community 136 - "thread-container.tsx"
 Cohesion: 0.15
-Nodes (21): EndpointsListCard(), CodeHeader(), createMarkdownComponents(), looksLikeCode(), Message(), MessageContent(), MessageRenderedComponentArea(), useCollapsibleState() (+13 more)
+Nodes (19): EndpointsListCard(), CodeHeader(), createMarkdownComponents(), looksLikeCode(), Message(), MessageContent(), MessageRenderedComponentArea(), useCollapsibleState() (+11 more)
 
 ### Community 137 - "class-variance-authority"
 Cohesion: 0.06
@@ -570,19 +569,19 @@ Nodes (18): Express, User, api, Duration, InsertSkyobservUser, insertSkyobservUs
 
 ### Community 139 - "class-variance-authority"
 Cohesion: 0.10
-Nodes (10): _exact_stack_identifier(), _project_row(), Resolve a standalone API identifier even when its BM25 IDF is low., Search stack-specific guidelines, search_stack(), _valid_max_results(), _rows(), TestNativeDesktopStackFreshness (+2 more)
+Nodes (8): _exact_stack_identifier(), Resolve a standalone API identifier even when its BM25 IDF is low., Search stack-specific guidelines, search_stack(), _rows(), TestNativeDesktopStackFreshness, _rows(), TestWebStackFreshness
 
 ### Community 140 - "Typography Specifications"
 Cohesion: 0.06
 Nodes (30): Accessibility, Base System, Best Practices, Clean & Modern, Common Font Pairings, Contrast Requirements, CSS Implementation, Editorial (+22 more)
 
 ### Community 141 - "scripts/core.py"
-Cohesion: 0.12
-Nodes (25): _contains_phrase(), _domain_keywords(), _file_signature(), _get_bm25(), _load_csv(), _load_csv_snapshot(), _load_product_keywords(), _load_rows_or_empty() (+17 more)
+Cohesion: 0.11
+Nodes (30): _contains_phrase(), _domain_keywords(), _exact_match_diagnostic(), _file_signature(), _get_bm25(), _legacy_successor_guidance(), _load_csv(), _load_csv_snapshot() (+22 more)
 
 ### Community 142 - "DesignSystemGenerator"
-Cohesion: 0.21
-Nodes (7): apply_decision_rules(), _object_without_duplicates(), parse_decision_rules(), Return deterministic mutations and an audit trail; never execute data., Parse the canonical condition -> action-array representation., _validate_action(), _check_reasoning_contract()
+Cohesion: 0.16
+Nodes (9): Find matching reasoning rule for a category., Apply reasoning rules to search results., Select best matching result based on priority keywords., apply_decision_rules(), _object_without_duplicates(), parse_decision_rules(), Return deterministic mutations and an audit trail; never execute data., Parse the canonical condition -> action-array representation. (+1 more)
 
 ### Community 143 - "Logo Usage Rules"
 Cohesion: 0.07
@@ -686,7 +685,7 @@ Nodes (18): 1. Wordmark (Logotype), 2. Lettermark (Monogram), 3. Pictorial Mark 
 
 ### Community 168 - "color"
 Cohesion: 0.11
-Nodes (19): $type, $value, background, foreground, muted-foreground, primary, primary-hover, secondary (+11 more)
+Nodes (19): $type, $value, background, destructive, foreground, muted-foreground, primary-hover, secondary (+11 more)
 
 ### Community 169 - "Brand Consistency Checklist"
 Cohesion: 0.11
@@ -701,12 +700,16 @@ Cohesion: 0.17
 Nodes (17): generate_css_for_background(), get_background_image(), get_curated_images(), get_overlay_css(), get_pexels_search_url(), load_backgrounds_config(), load_brand_colors(), main() (+9 more)
 
 ### Community 172 - "K8sNamespaceDetailPage.tsx"
-Cohesion: 0.21
-Nodes (13): AddStorageBackendDialog(), Props, DialogContent, DialogDescription, DialogFooter(), DialogHeader(), DialogOverlay, DialogTitle (+5 more)
+Cohesion: 0.67
+Nodes (4): $type, $value, md, md
 
 ### Community 173 - "card"
 Cohesion: 0.20
 Nodes (12): $type, $value, bg, bg, padding, shadow, card, bg (+4 more)
+
+### Community 174 - "BM25"
+Cohesion: 0.67
+Nodes (3): primary, $type, $value
 
 ### Community 176 - "TestThresholdGate"
 Cohesion: 0.13
@@ -761,12 +764,12 @@ Cohesion: 0.23
 Nodes (3): detect_domain(), Auto-detect the most relevant domain from query.      Matches are weighted by ke, TestDomainDetection
 
 ### Community 190 - ".generate"
-Cohesion: 0.14
-Nodes (8): Execute searches across multiple domains., Find matching reasoning rule for a category., Apply reasoning rules to search results., Select best matching result based on priority keywords., Extract results list from search result dict., Generate complete design system recommendation.          variance/motion/density, Bucket a 1-10 dial value into its tier config. Returns None if value is None., _resolve_dial()
+Cohesion: 0.16
+Nodes (8): _filter_anti_patterns_for_mode(), Drop "avoid dark mode" advice once dark mode is the resolved answer., Execute searches across multiple domains., Extract results list from search result dict., Generate complete design system recommendation.          variance/motion/density, Bucket a 1-10 dial value into its tier config. Returns None if value is None., _resolve_dial(), TestAntiPatternGating
 
 ### Community 191 - "_palette_is_dark"
-Cohesion: 0.29
-Nodes (8): padding-x, input, $type, $value, focus-ring, padding-x, $type, $value
+Cohesion: 0.67
+Nodes (4): padding-x, padding-x, $type, $value
 
 ### Community 192 - "Banner Design - Multi-Format Creative Banner System"
 Cohesion: 0.14
@@ -797,16 +800,16 @@ Cohesion: 0.14
 Nodes (13): Animation Tokens, Base Layer, Button Example, Component Classes, CSS Variables Setup, Dark Mode Toggle, HSL Format Benefits, shadcn/ui Alignment (+5 more)
 
 ### Community 199 - "radius"
-Cohesion: 0.24
-Nodes (10): $type, $value, $type, $value, primitive, radius, shadow, full (+2 more)
+Cohesion: 0.29
+Nodes (8): $type, $value, $type, $value, radius, default, full, default
 
 ### Community 200 - "Layout Patterns"
 Cohesion: 0.14
 Nodes (13): Card Styles, Component Variants, CSS Structures, Feature Grid (3 columns), Layout Decision Flow, Layout Patterns, Layout Selection by Use Case, Metric Styles (+5 more)
 
 ### Community 201 - "toast.tsx"
-Cohesion: 0.60
-Nodes (5): sm, sm, sm, $type, $value
+Cohesion: 0.47
+Nodes (6): sm, shadow, sm, sm, $type, $value
 
 ### Community 202 - "update.md"
 Cohesion: 0.15
@@ -889,8 +892,8 @@ Cohesion: 0.28
 Nodes (13): createStorageBackendForUser(), deleteStorageBackendForUser(), getStorageBackendForUser(), listStorageBackendsForUser(), StorageBackendView, toView(), getAccountOwnerId(), configuredStorageId() (+5 more)
 
 ### Community 223 - "duration"
-Cohesion: 0.20
-Nodes (10): fast, normal, slow, $type, $value, $type, $value, duration (+2 more)
+Cohesion: 0.18
+Nodes (11): fast, normal, slow, $type, $value, $type, $value, primitive (+3 more)
 
 ### Community 224 - "Slide Strategies"
 Cohesion: 0.20
@@ -925,8 +928,8 @@ Cohesion: 0.33
 Nodes (5): References (Knowledge Base), Routing, Slides, Subcommands, When to Use
 
 ### Community 234 - "TestLandingAndStackContract"
-Cohesion: 0.15
-Nodes (10): _filter_anti_patterns_for_mode(), _query_wants_dark(), True when a styles.csv row describes itself as dark-first., True when the query explicitly asks for a dark theme., Resolve the mode the rest of the output has to agree with., Drop "avoid dark mode" advice once dark mode is the resolved answer., _resolve_color_mode(), _style_is_dark_primary() (+2 more)
+Cohesion: 0.23
+Nodes (7): _query_wants_dark(), True when a styles.csv row describes itself as dark-first., True when the query explicitly asks for a dark theme., Resolve the mode the rest of the output has to agree with., _resolve_color_mode(), _style_is_dark_primary(), TestModeResolution
 
 ### Community 235 - "destructive-foreground"
 Cohesion: 0.67
@@ -944,17 +947,13 @@ Nodes (3): primary-foreground, $type, $value
 Cohesion: 0.67
 Nodes (3): secondary-foreground, $type, $value
 
-### Community 239 - "sm"
-Cohesion: 0.67
-Nodes (4): $type, $value, default, default
-
 ### Community 240 - "xl"
 Cohesion: 0.67
 Nodes (4): xl, xl, $type, $value
 
 ### Community 241 - "none"
-Cohesion: 0.33
-Nodes (6): _exact_row_identity(), Return non-empty public identities from ordinary and alias fields., Resolve an explicit style identity without opening generic variant ranking., Return one row whose stable public identity exactly matches the query., _row_identities(), _style_identity()
+Cohesion: 0.25
+Nodes (8): _exact_row_identity(), Suggest complete public identities so a retry can bypass score thresholds., Return non-empty public identities from ordinary and alias fields., Resolve an explicit style identity without opening generic variant ranking., Return one row whose stable public identity exactly matches the query., _row_identities(), _style_identity(), _suggest_identities()
 
 ### Community 247 - "8"
 Cohesion: 0.60
@@ -969,16 +968,16 @@ Cohesion: 0.67
 Nodes (3): ring, $type, $value
 
 ## Knowledge Gaps
-- **1327 isolated node(s):** `fs`, `path`, `fs`, `path`, `fs` (+1322 more)
+- **1333 isolated node(s):** `fs`, `path`, `fs`, `path`, `fs` (+1328 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **113 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **112 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `cn()` connect `cn` to `tambo-tools.ts`, `use-toast.ts`, `thread-container.tsx`, `utils.ts`, `AppLayout.tsx`, `K8sNamespaceDetailPage.tsx`, `useDurationStore`, `menubar.tsx`, `button.tsx`, `SkyWalking OAP on Oracle Cloud (Always Free)`, `carousel.tsx`, `dropdown-menu.tsx`, `context-menu.tsx`, `table.tsx`, `breadcrumb.tsx`, `alert.tsx`, `avatar.tsx`, `K8sNamespaceDetailPage.tsx`, `class-variance-authority`, `BM25`, `clsx`, `date-fns`, `dotenv`, `input-otp`, `tw-animate-css`?**
+- **Why does `cn()` connect `cn` to `tambo-tools.ts`, `use-toast.ts`, `thread-container.tsx`, `AppLayout.tsx`, `utils.ts`, `K8sNamespaceDetailPage.tsx`, `useDurationStore`, `menubar.tsx`, `button.tsx`, `SkyWalking OAP on Oracle Cloud (Always Free)`, `carousel.tsx`, `dropdown-menu.tsx`, `context-menu.tsx`, `table.tsx`, `breadcrumb.tsx`, `drawer.tsx`, `alert.tsx`, `avatar.tsx`, `class-variance-authority`, `clsx`, `date-fns`, `dotenv`, `input-otp`, `tw-animate-css`, `react-icons`?**
   _High betweenness centrality (0.030) - this node is a cross-community bridge._
-- **Why does `dependencies` connect `dependencies` to `md`, `K8sResourceDrawer.tsx`, `TestStyleTaxonomy`, `thread-container.tsx`, `package.json`, `alert.tsx`, `react-icons`, `class-variance-authority`, `@tanstack/react-query`, `tw-animate-css`, `alert.tsx`, `accordion.tsx`, `cmdk`, `connect-pg-simple`, `embla-carousel-react`, `express-session`, `framer-motion`, `highlight.js`, `@hookform/resolvers`, `@jridgewell/trace-mapping`, `json-stringify-pretty-compact`, `memorystore`, `next-themes`, `graphql`, `passport-local`, `pg`, `radix-ui`, `@radix-ui/react-alert-dialog`, `@radix-ui/react-avatar`, `@radix-ui/react-checkbox`, `@radix-ui/react-collapsible`, `@radix-ui/react-dialog`, `@radix-ui/react-dropdown-menu`, `@radix-ui/react-label`, `@radix-ui/react-menubar`, `@radix-ui/react-navigation-menu`, `@radix-ui/react-popover`, `@radix-ui/react-progress`, `@radix-ui/react-radio-group`, `@radix-ui/react-scroll-area`, `@radix-ui/react-select`, `@radix-ui/react-separator`, `@radix-ui/react-slider`, `@radix-ui/react-switch`, `@radix-ui/react-tabs`, `@radix-ui/react-toast`, `resizable.tsx`, `@radix-ui/react-toggle`, `@radix-ui/react-tooltip`, `react-day-picker`, `react-dom`, `react-resizable-panels`, `react-xarrows`, `recharts`, `tailwind-merge`, `tailwindcss-animate`, `@tambo-ai/react`, `@tambo-ai/typescript-sdk`, `vaul`, `wouter`, `ws`, `zod`, `zod-validation-error`, `zustand`, `12`, `destructive`, `@radix-ui/react-slot`, `react-markdown`, `class-variance-authority`?**
+- **Why does `dependencies` connect `dependencies` to `K8sResourceDrawer.tsx`, `thread-container.tsx`, `TestStyleTaxonomy`, `package.json`, `alert.tsx`, `react-icons`, `class-variance-authority`, `@tanstack/react-query`, `tw-animate-css`, `accordion.tsx`, `cmdk`, `connect-pg-simple`, `embla-carousel-react`, `express-session`, `framer-motion`, `highlight.js`, `@hookform/resolvers`, `@jridgewell/trace-mapping`, `json-stringify-pretty-compact`, `memorystore`, `next-themes`, `graphql`, `passport-local`, `pg`, `radix-ui`, `@radix-ui/react-alert-dialog`, `@radix-ui/react-avatar`, `@radix-ui/react-checkbox`, `@radix-ui/react-collapsible`, `@radix-ui/react-dialog`, `@radix-ui/react-dropdown-menu`, `@radix-ui/react-label`, `@radix-ui/react-menubar`, `@radix-ui/react-navigation-menu`, `@radix-ui/react-popover`, `@radix-ui/react-progress`, `@radix-ui/react-radio-group`, `@radix-ui/react-scroll-area`, `@radix-ui/react-select`, `@radix-ui/react-separator`, `@radix-ui/react-slider`, `@radix-ui/react-switch`, `@radix-ui/react-tabs`, `@radix-ui/react-toast`, `resizable.tsx`, `@radix-ui/react-toggle`, `@radix-ui/react-tooltip`, `react-day-picker`, `react-dom`, `react-resizable-panels`, `react-xarrows`, `recharts`, `tailwind-merge`, `tailwindcss-animate`, `@tambo-ai/react`, `@tambo-ai/typescript-sdk`, `vaul`, `wouter`, `ws`, `zod`, `zod-validation-error`, `sm`, `zustand`, `12`, `destructive`, `@radix-ui/react-slot`, `react-markdown`, `class-variance-authority`?**
   _High betweenness centrality (0.025) - this node is a cross-community bridge._
 - **Why does `react` connect `thread-container.tsx` to `tambo-tools.ts`, `cn`, `alert.tsx`, `use-toast.ts`, `AppLayout.tsx`, `dependencies`, `date-fns`, `SkyWalking OAP on Oracle Cloud (Always Free)`, `dropdown-menu.tsx`?**
   _High betweenness centrality (0.021) - this node is a cross-community bridge._
@@ -987,6 +986,6 @@ _Questions this graph is uniquely positioned to answer:_
 - **Are the 16 inferred relationships involving `DesignSystemGenerator` (e.g. with `TestBm25CoreBehavior` and `TestDiagnosticsContracts`) actually correct?**
   _`DesignSystemGenerator` has 16 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `fs`, `path`, `fs` to the rest of the system?**
-  _1327 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _1333 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `message-thread-full.tsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.0780399274047187 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.07656341320864991 - nodes in this community are weakly interconnected._
