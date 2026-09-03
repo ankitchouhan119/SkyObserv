@@ -21,7 +21,44 @@
 
 ## Part 2 — CI/CD
 
-> CI/CD screenshots — GitHub Actions runs (add after pipeline runs green)
+### CI Pipeline — All Checks Passed
+PR #14 — both `test` and `scan` jobs green. 3 passes, Trivy scan clean. Total duration 2m 2s.
+
+![CI all checks passed](./screenshots/ci1.png)
+
+### CI — test job steps
+`test` job: npm ci → Run tests → Type check → Audit dependencies — all green in 34s.
+
+![CI test job](./screenshots/ci2.png)
+
+### CI — scan job steps
+`scan` job: Build image → Trivy scan → no CRITICAL vulns found — green in 1m 22s.
+
+![CI scan job](./screenshots/ci3.png)
+
+### CI Checks on Pull Request
+PR #14 showing all checks passed: `CI/test`, `CI/scan`, and Netlify deploy preview ready.
+
+![CI PR checks](./screenshots/ci4.png)
+
+### CD Pipeline — Waiting for Production Approval
+CD triggered on merge. `build-push` and `deploy-staging` done. `deploy-production` waiting for manual approval (15 min timer).
+
+![CD waiting for approval](./screenshots/cd1.png)
+
+### CD — build-push job
+Docker image built and pushed to GHCR in 1m 16s.
+
+![CD build-push](./screenshots/cd2.png)
+
+### CD — deploy-staging job
+Deployed to staging via SSH in 1m 8s
+![CD deploy-staging](./screenshots/cd3.png)
+
+### CD — deploy-production job
+Production deploy succeeded after manual approval
+
+![CD deploy-production](./screenshots/cd4.png)
 
 ---
 

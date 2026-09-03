@@ -6,6 +6,14 @@ SkyObserv Observability a modern, AI-powered observability platform that integra
 
 **Demo Video Link**: https://www.loom.com/share/08cf7f3848504c1da6c7390da9c9b0cf
 
+**DevOps Setup**: [DEVOPS.md](./DEVOPS.md) — infrastructure, deployment, monitoring, and runbook
+
+**Terraform**: [infra/terraform](https://github.com/ankitchouhan119/SkyObserv/tree/main/infra) — VPC, EC2, RDS, IAM, security groups
+
+**CI/CD**: [.github/workflows](https://github.com/ankitchouhan119/SkyObserv/tree/main/.github/workflows) — GitHub Actions (CI + CD pipelines)
+
+**Screenshots**: [SCREENSHOTS.md](./SCREENSHOTS.md) — assignment deliverable screenshots
+
 
 ![alt text](./screenshots/image.png)
 ![alt text](./screenshots/image7.png)

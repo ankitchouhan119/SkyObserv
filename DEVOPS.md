@@ -1,6 +1,10 @@
 # SkyObserv — DevOps Setup
 
 Infrastructure, deployment, and monitoring for the SkyObserv application.
+> **Challenges**: [CHALLENGES.md](./CHALLENGES.md)
+> **Screenshots**: [SCREENSHOTS.md](./SCREENSHOTS.md)
+> **Terraform**: [infra/terraform](https://github.com/ankitchouhan119/SkyObserv/tree/main/infra)
+> **CI/CD**: [.github/workflows](https://github.com/ankitchouhan119/SkyObserv/tree/main/.github/workflows)
 
 ---
 
