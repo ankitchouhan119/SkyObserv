@@ -7,7 +7,6 @@
     "check": "tsc",
     "test": "vitest run",
     "db:push": "prisma db push",
-    "postinstall": "prisma generate",
     "dev": "NODE_ENV=development tsx server/index.ts",
     "build": "vite build",
     "start": "NODE_ENV=production tsx server/index.ts",
