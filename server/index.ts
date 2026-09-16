@@ -5,9 +5,7 @@ import { api } from "@shared/routes";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
-import { db } from "./db";
-import { userPreferences } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { prisma } from "./db";
 import {
   createUser,
   ensureBootstrapAdmin,
@@ -54,8 +52,6 @@ import {
   removeTeamMember,
   resetTeamMemberPassword,
 } from "./teamAccess";
-import { serviceRegistrations, skyobservUsers } from "@shared/schema";
-import { isNull } from "drizzle-orm";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -116,13 +112,12 @@ app.post("/api/auth/signup", async (req, res) => {
   }
 
   try {
-    const existing = await db
-      .select({ id: skyobservUsers.id })
-      .from(skyobservUsers)
-      .where(eq(skyobservUsers.email, email))
-      .limit(1);
+    const existing = await prisma.skyobservUser.findUnique({
+      where: { email },
+      select: { id: true },
+    });
 
-    if (existing.length > 0) {
+    if (existing) {
       return res.status(409).json({ message: "An account with this email already exists" });
     }
 
@@ -231,10 +226,10 @@ app.get("/api/profile/services", requireAuth, async (req, res) => {
 
   const ownerId = getAccountOwnerId(req.user);
 
-  const rows = await db
-    .select()
-    .from(serviceRegistrations)
-    .where(eq(serviceRegistrations.userId, ownerId));
+  const rows = await prisma.serviceRegistration.findMany({
+    where: { userId: ownerId },
+    select: { id: true, serviceName: true, serviceInstance: true, lastSeenAt: true },
+  });
 
   return res.json({
     services: rows.map((row) => ({
@@ -408,11 +403,10 @@ app.post("/api/profile/regenerate-token", requireAuth, async (req, res) => {
     return res.status(403).json({ message: "Only the account owner can manage the API token" });
   }
 
-  const [updated] = await db
-    .update(skyobservUsers)
-    .set({ apiToken: generateApiToken(), updatedAt: new Date() })
-    .where(eq(skyobservUsers.id, req.user.id))
-    .returning();
+  const updated = await prisma.skyobservUser.update({
+    where: { id: req.user.id },
+    data: { apiToken: generateApiToken(), updatedAt: new Date() },
+  });
 
   return res.json({ user: publicUser(updated) });
 });
@@ -475,12 +469,8 @@ app.get("/config", requireAuth, (_, res) => {
 app.get(api.preferences.get.path, requireAuth, async (req, res) => {
   try {
     const key = String(req.params.key);
-    const rows = await db
-      .select()
-      .from(userPreferences)
-      .where(eq(userPreferences.key, key))
-      .limit(1);
-    res.json(rows[0] ?? { key, value: {} });
+    const row = await prisma.userPreference.findUnique({ where: { key } });
+    res.json(row ?? { key, value: {} });
   } catch (err) {
     log(`DB read error: ${err}`);
     res.status(500).json({ error: "Failed to fetch preference" });
@@ -490,14 +480,11 @@ app.get(api.preferences.get.path, requireAuth, async (req, res) => {
 app.post(api.preferences.save.path, requireAuth, async (req, res) => {
   try {
     const { key, value } = req.body;
-    const [row] = await db
-      .insert(userPreferences)
-      .values({ key, value })
-      .onConflictDoUpdate({
-        target: userPreferences.key,
-        set: { value, updatedAt: new Date() },
-      })
-      .returning();
+    const row = await prisma.userPreference.upsert({
+      where: { key },
+      update: { value, updatedAt: new Date() },
+      create: { key, value },
+    });
     res.json(row);
   } catch (err) {
     log(`DB write error: ${err}`);
@@ -659,23 +646,6 @@ app.post(api.graphql.proxy.path, requireAuth, async (req, res) => {
         log("WARNING: Authentication is enabled but admin bootstrap failed.");
       }
     });
-
-    if (isAuthEnabled()) {
-      try {
-        const missingTokens = await db
-          .select()
-          .from(skyobservUsers)
-          .where(isNull(skyobservUsers.apiToken));
-        for (const user of missingTokens) {
-          await db
-            .update(skyobservUsers)
-            .set({ apiToken: generateApiToken(), updatedAt: new Date() })
-            .where(eq(skyobservUsers.id, user.id));
-        }
-      } catch (err) {
-        log(`Auth token backfill skipped: ${err}`);
-      }
-    }
 
     if (useVite) {
       const { setupVite } = await import("./vite");

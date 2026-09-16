@@ -1,8 +1,6 @@
-import { and, eq } from "drizzle-orm";
 import type { SkyobservUser } from "@shared/schema";
-import { storageBackends } from "@shared/schema";
 import { configuredStorageId, parseStorageEndpointInput, STORAGE_KINDS } from "@shared/storageEndpoint";
-import { db } from "./db";
+import { prisma } from "./db";
 import { getAccountOwnerId } from "./teamAccess";
 
 export type StorageBackendView = {
@@ -16,7 +14,7 @@ export type StorageBackendView = {
   traced: false;
 };
 
-function toView(row: typeof storageBackends.$inferSelect): StorageBackendView {
+function toView(row: { id: number; label: string | null; endpoint: string; kind: string; serviceName: string | null }): StorageBackendView {
   return {
     id: configuredStorageId(row.id),
     name: row.label || row.endpoint,
@@ -31,11 +29,7 @@ function toView(row: typeof storageBackends.$inferSelect): StorageBackendView {
 
 export async function listStorageBackendsForUser(user: SkyobservUser): Promise<StorageBackendView[]> {
   const ownerId = getAccountOwnerId(user);
-  const rows = await db
-    .select()
-    .from(storageBackends)
-    .where(eq(storageBackends.userId, ownerId));
-
+  const rows = await prisma.storageBackend.findMany({ where: { userId: ownerId } });
   return rows.map(toView);
 }
 
@@ -44,13 +38,10 @@ export async function getStorageBackendForUser(
   backendId: number,
 ): Promise<StorageBackendView | null> {
   const ownerId = getAccountOwnerId(user);
-  const rows = await db
-    .select()
-    .from(storageBackends)
-    .where(and(eq(storageBackends.userId, ownerId), eq(storageBackends.id, backendId)))
-    .limit(1);
-
-  return rows[0] ? toView(rows[0]) : null;
+  const row = await prisma.storageBackend.findFirst({
+    where: { userId: ownerId, id: backendId },
+  });
+  return row ? toView(row) : null;
 }
 
 export async function createStorageBackendForUser(
@@ -73,16 +64,15 @@ export async function createStorageBackendForUser(
   }
 
   const ownerId = getAccountOwnerId(user);
-  const [row] = await db
-    .insert(storageBackends)
-    .values({
+  const row = await prisma.storageBackend.create({
+    data: {
       userId: ownerId,
       kind: parsed.kind,
       endpoint: parsed.endpoint,
       serviceName: input.serviceName?.trim() || null,
       label: input.label?.trim() || null,
-    })
-    .returning();
+    },
+  });
 
   return toView(row);
 }
@@ -96,14 +86,10 @@ export async function deleteStorageBackendForUser(
   }
 
   const ownerId = getAccountOwnerId(user);
-  const rows = await db
-    .delete(storageBackends)
-    .where(and(eq(storageBackends.userId, ownerId), eq(storageBackends.id, backendId)))
-    .returning({ id: storageBackends.id });
+  const deleted = await prisma.storageBackend.deleteMany({
+    where: { userId: ownerId, id: backendId },
+  });
 
-  if (rows.length === 0) {
-    return { error: "Storage backend not found" };
-  }
-
+  if (deleted.count === 0) return { error: "Storage backend not found" };
   return { ok: true };
 }
