@@ -3,9 +3,8 @@ import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
-import { eq } from "drizzle-orm";
-import { db, pool } from "./db";
-import { skyobservUsers } from "@shared/schema";
+import { prisma, pool } from "./db";
+import type { SkyobservUser } from "@shared/schema";
 import { hashPassword, verifyPassword } from "./password";
 import { generateApiToken } from "./tokens";
 import { isValidEmail, normalizeEmail } from "./passwordReset";
@@ -96,8 +95,6 @@ export async function ensureAuthSchema(): Promise<void> {
 export async function ensureBootstrapAdmin(): Promise<void> {
   if (!isAuthEnabled()) return;
 
-  await ensureAuthSchema();
-
   const adminEmail = normalizeEmail(
     process.env.SKYOBSERV_ADMIN_EMAIL?.trim() ||
       process.env.SKYOBSERV_ADMIN_USERNAME?.trim() ||
@@ -107,37 +104,36 @@ export async function ensureBootstrapAdmin(): Promise<void> {
   if (!adminEmail || !adminPassword || !isValidEmail(adminEmail)) return;
 
   const passwordHash = hashPassword(adminPassword);
-  const existing = await db
-    .select()
-    .from(skyobservUsers)
-    .where(eq(skyobservUsers.email, adminEmail))
-    .limit(1);
+  const existing = await prisma.skyobservUser.findUnique({
+    where: { email: adminEmail },
+  });
 
-  if (existing.length === 0) {
-    await db.insert(skyobservUsers).values({
-      email: adminEmail,
-      fullName: "SkyObserv Admin",
-      passwordHash,
-      apiToken: generateApiToken(),
-      isAdmin: true,
-      allowedServices: ["*"],
+  if (!existing) {
+    await prisma.skyobservUser.create({
+      data: {
+        email: adminEmail,
+        fullName: "SkyObserv Admin",
+        passwordHash,
+        apiToken: generateApiToken(),
+        isAdmin: true,
+        allowedServices: ["*"],
+      },
     });
     console.log(`[auth] Created admin user: ${adminEmail}`);
     return;
   }
 
-  const user = existing[0];
-  await db
-    .update(skyobservUsers)
-    .set({
-      fullName: user.fullName || "SkyObserv Admin",
+  await prisma.skyobservUser.update({
+    where: { id: existing.id },
+    data: {
+      fullName: existing.fullName || "SkyObserv Admin",
       passwordHash,
       isAdmin: true,
       allowedServices: ["*"],
-      apiToken: user.apiToken || generateApiToken(),
+      apiToken: existing.apiToken || generateApiToken(),
       updatedAt: new Date(),
-    })
-    .where(eq(skyobservUsers.id, user.id));
+    },
+  });
 }
 
 export type CreateUserInput = {
@@ -151,9 +147,8 @@ export type CreateUserInput = {
 export async function createUser(input: CreateUserInput) {
   const normalized = normalizeEmail(input.email);
   const passwordHash = hashPassword(input.password);
-  const [user] = await db
-    .insert(skyobservUsers)
-    .values({
+  return prisma.skyobservUser.create({
+    data: {
       email: normalized,
       fullName: input.fullName.trim(),
       contactNumber: input.contactNumber?.trim() || null,
@@ -162,10 +157,8 @@ export async function createUser(input: CreateUserInput) {
       apiToken: generateApiToken(),
       isAdmin: false,
       allowedServices: [],
-    })
-    .returning();
-
-  return user;
+    },
+  });
 }
 
 export async function verifyUserCredentials(email: string, password: string) {
@@ -174,13 +167,10 @@ export async function verifyUserCredentials(email: string, password: string) {
     return { user: null, message: "Email and password are required" };
   }
 
-  const rows = await db
-    .select()
-    .from(skyobservUsers)
-    .where(eq(skyobservUsers.email, normalized))
-    .limit(1);
+  const user = await prisma.skyobservUser.findUnique({
+    where: { email: normalized },
+  });
 
-  const user = rows[0];
   if (!user || !verifyPassword(password, user.passwordHash)) {
     return { user: null, message: "Invalid email or password" };
   }
@@ -198,13 +188,21 @@ export function setupAuth(app: Express): void {
 
   app.set("trust proxy", 1);
 
+  const isDev = process.env.NODE_ENV !== "production";
+
   app.use(
     session({
-      store: new PgSession({
-        pool,
-        tableName: "skyobserv_sessions",
-        createTableIfMissing: true,
-      }),
+      // In development, use the default in-memory store to avoid needing
+      // a direct TCP connection to the DB just for sessions.
+      ...(isDev
+        ? {}
+        : {
+            store: new PgSession({
+              pool,
+              tableName: "skyobserv_sessions",
+              createTableIfMissing: true,
+            }),
+          }),
       secret,
       resave: false,
       saveUninitialized: false,
@@ -229,13 +227,10 @@ export function setupAuth(app: Express): void {
       async (email, password, done) => {
         try {
           const normalized = normalizeEmail(email);
-          const rows = await db
-            .select()
-            .from(skyobservUsers)
-            .where(eq(skyobservUsers.email, normalized))
-            .limit(1);
+          const user = await prisma.skyobservUser.findUnique({
+            where: { email: normalized },
+          });
 
-          const user = rows[0];
           if (!user || !verifyPassword(password, user.passwordHash)) {
             return done(null, false, { message: "Invalid email or password" });
           }
@@ -254,12 +249,8 @@ export function setupAuth(app: Express): void {
 
   passport.deserializeUser(async (id: number, done) => {
     try {
-      const rows = await db
-        .select()
-        .from(skyobservUsers)
-        .where(eq(skyobservUsers.id, id))
-        .limit(1);
-      done(null, rows[0] ?? false);
+      const user = await prisma.skyobservUser.findUnique({ where: { id } });
+      done(null, user ?? false);
     } catch (err) {
       done(err);
     }
@@ -272,7 +263,7 @@ export const requireAuth: RequestHandler = (req, res, next) => {
   return res.status(401).json({ message: "Authentication required", authEnabled: true });
 };
 
-export function publicUser(user: typeof skyobservUsers.$inferSelect) {
+export function publicUser(user: SkyobservUser) {
   return {
     email: user.email,
     fullName: user.fullName,

@@ -27,6 +27,8 @@ export function getDatabaseConnectionOptions(
     url.hostname.includes(".rds.amazonaws.com");
 
   url.searchParams.delete("sslmode");
+  // node-postgres does not understand Neon's channel_binding query param.
+  url.searchParams.delete("channel_binding");
 
   const connectionString = url
     .toString()

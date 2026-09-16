@@ -1,0 +1,77 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model SkyobservUser {
+  id              Int       @id @default(autoincrement())
+  email           String    @unique
+  fullName        String    @default("") @map("full_name")
+  contactNumber   String?   @map("contact_number")
+  organisation    String?
+  invitedByUserId Int?      @map("invited_by_user_id")
+  passwordHash    String    @map("password_hash")
+  apiToken        String    @unique @map("api_token")
+  isAdmin         Boolean   @default(false) @map("is_admin")
+  allowedServices Json      @default("[]") @map("allowed_services")
+  createdAt       DateTime? @default(now()) @map("created_at")
+  updatedAt       DateTime? @default(now()) @map("updated_at")
+
+  serviceRegistrations ServiceRegistration[]
+  storageBackends      StorageBackend[]
+  invitedMembers       SkyobservUser[]       @relation("InvitedBy")
+  invitedBy            SkyobservUser?        @relation("InvitedBy", fields: [invitedByUserId], references: [id])
+
+  @@map("skyobserv_users")
+}
+
+model PasswordResetOtp {
+  id        Int       @id @default(autoincrement())
+  email     String
+  otpHash   String    @map("otp_hash")
+  expiresAt DateTime  @map("expires_at")
+  createdAt DateTime? @default(now()) @map("created_at")
+
+  @@map("password_reset_otps")
+}
+
+model ServiceRegistration {
+  id              Int       @id @default(autoincrement())
+  userId          Int       @map("user_id")
+  serviceName     String    @map("service_name")
+  serviceInstance String?   @map("service_instance")
+  lastSeenAt      DateTime? @default(now()) @map("last_seen_at")
+  createdAt       DateTime? @default(now()) @map("created_at")
+
+  user SkyobservUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, serviceName])
+  @@map("service_registrations")
+}
+
+model StorageBackend {
+  id          Int       @id @default(autoincrement())
+  userId      Int       @map("user_id")
+  serviceName String?   @map("service_name")
+  kind        String
+  endpoint    String
+  label       String?
+  createdAt   DateTime? @default(now()) @map("created_at")
+
+  user SkyobservUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("storage_backends")
+}
+
+model UserPreference {
+  id        Int       @id @default(autoincrement())
+  key       String    @unique
+  value     Json
+  updatedAt DateTime? @default(now()) @map("updated_at")
+
+  @@map("user_preferences")
+}

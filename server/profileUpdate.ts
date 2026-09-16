@@ -1,6 +1,5 @@
-import { eq } from "drizzle-orm";
-import { db } from "./db";
-import { skyobservUsers, type SkyobservUser } from "@shared/schema";
+import { prisma } from "./db";
+import type { SkyobservUser } from "@shared/schema";
 import { hashPassword, verifyPassword } from "./password";
 
 export type ProfileUpdateInput = {
@@ -15,16 +14,14 @@ export async function updateUserProfile(
   user: SkyobservUser,
   input: ProfileUpdateInput,
 ): Promise<{ user: SkyobservUser } | { error: string }> {
-  const updates: Partial<typeof skyobservUsers.$inferInsert> = {
-    updatedAt: new Date(),
-  };
+  const data: Partial<SkyobservUser> & { updatedAt: Date } = { updatedAt: new Date() };
 
   if (input.fullName !== undefined) {
     const fullName = input.fullName.trim();
     if (!fullName || fullName.length < 2) {
       return { error: "Full name must be at least 2 characters" };
     }
-    updates.fullName = fullName;
+    data.fullName = fullName;
   }
 
   if (input.contactNumber !== undefined) {
@@ -32,12 +29,11 @@ export async function updateUserProfile(
     if (!contactNumber || contactNumber.length < 8) {
       return { error: "Enter a valid contact number" };
     }
-    updates.contactNumber = contactNumber;
+    data.contactNumber = contactNumber;
   }
 
   if (input.organisation !== undefined) {
-    const organisation = input.organisation.trim();
-    updates.organisation = organisation || null;
+    data.organisation = input.organisation.trim() || null;
   }
 
   if (input.newPassword) {
@@ -50,18 +46,17 @@ export async function updateUserProfile(
     if (input.newPassword.length < 8) {
       return { error: "New password must be at least 8 characters" };
     }
-    updates.passwordHash = hashPassword(input.newPassword);
+    data.passwordHash = hashPassword(input.newPassword);
   }
 
-  if (Object.keys(updates).length === 1) {
+  if (Object.keys(data).length === 1) {
     return { error: "No changes to save" };
   }
 
-  const [updated] = await db
-    .update(skyobservUsers)
-    .set(updates)
-    .where(eq(skyobservUsers.id, user.id))
-    .returning();
+  const updated = await prisma.skyobservUser.update({
+    where: { id: user.id },
+    data,
+  });
 
   return { user: updated };
 }

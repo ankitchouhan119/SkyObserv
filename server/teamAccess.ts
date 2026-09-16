@@ -1,7 +1,6 @@
 import { randomBytes } from "crypto";
-import { and, eq } from "drizzle-orm";
-import { db } from "./db";
-import { skyobservUsers, type SkyobservUser } from "@shared/schema";
+import { prisma } from "./db";
+import type { SkyobservUser } from "@shared/schema";
 import { hashPassword } from "./password";
 import { generateApiToken } from "./tokens";
 import { isValidEmail, normalizeEmail } from "./passwordReset";
@@ -25,18 +24,10 @@ export function generateTempPassword(): string {
 }
 
 export async function listTeamMembers(ownerId: number) {
-  const rows = await db
-    .select({
-      id: skyobservUsers.id,
-      email: skyobservUsers.email,
-      fullName: skyobservUsers.fullName,
-      contactNumber: skyobservUsers.contactNumber,
-      createdAt: skyobservUsers.createdAt,
-    })
-    .from(skyobservUsers)
-    .where(eq(skyobservUsers.invitedByUserId, ownerId));
-
-  return rows;
+  return prisma.skyobservUser.findMany({
+    where: { invitedByUserId: ownerId },
+    select: { id: true, email: true, fullName: true, contactNumber: true, createdAt: true },
+  });
 }
 
 export async function inviteTeamMember(
@@ -51,23 +42,11 @@ export async function inviteTeamMember(
   const normalized = normalizeEmail(email);
   const trimmedName = fullName.trim();
 
-  if (!isValidEmail(normalized)) {
-    return { error: "Enter a valid email address" };
-  }
-  if (!trimmedName || trimmedName.length < 2) {
-    return { error: "Full name is required" };
-  }
-  if (normalized === owner.email) {
-    return { error: "You cannot invite yourself" };
-  }
+  if (!isValidEmail(normalized)) return { error: "Enter a valid email address" };
+  if (!trimmedName || trimmedName.length < 2) return { error: "Full name is required" };
+  if (normalized === owner.email) return { error: "You cannot invite yourself" };
 
-  const existing = await db
-    .select()
-    .from(skyobservUsers)
-    .where(eq(skyobservUsers.email, normalized))
-    .limit(1);
-
-  const existingUser = existing[0];
+  const existingUser = await prisma.skyobservUser.findUnique({ where: { email: normalized } });
   if (existingUser) {
     if (existingUser.invitedByUserId === owner.id) {
       return resetTeamMemberPassword(owner, existingUser.id);
@@ -76,9 +55,8 @@ export async function inviteTeamMember(
   }
 
   const tempPassword = generateTempPassword();
-  const [member] = await db
-    .insert(skyobservUsers)
-    .values({
+  const member = await prisma.skyobservUser.create({
+    data: {
       email: normalized,
       fullName: trimmedName,
       passwordHash: hashPassword(tempPassword),
@@ -86,12 +64,9 @@ export async function inviteTeamMember(
       invitedByUserId: owner.id,
       isAdmin: false,
       allowedServices: [],
-    })
-    .returning({
-      id: skyobservUsers.id,
-      email: skyobservUsers.email,
-      fullName: skyobservUsers.fullName,
-    });
+    },
+    select: { id: true, email: true, fullName: true },
+  });
 
   return { member, tempPassword };
 }
@@ -104,24 +79,17 @@ export async function resetTeamMemberPassword(
     return { error: "Only the account owner can reset team passwords" };
   }
 
-  const rows = await db
-    .select()
-    .from(skyobservUsers)
-    .where(
-      and(eq(skyobservUsers.id, memberId), eq(skyobservUsers.invitedByUserId, owner.id)),
-    )
-    .limit(1);
+  const member = await prisma.skyobservUser.findFirst({
+    where: { id: memberId, invitedByUserId: owner.id },
+  });
 
-  const member = rows[0];
-  if (!member) {
-    return { error: "Team member not found" };
-  }
+  if (!member) return { error: "Team member not found" };
 
   const tempPassword = generateTempPassword();
-  await db
-    .update(skyobservUsers)
-    .set({ passwordHash: hashPassword(tempPassword), updatedAt: new Date() })
-    .where(eq(skyobservUsers.id, member.id));
+  await prisma.skyobservUser.update({
+    where: { id: member.id },
+    data: { passwordHash: hashPassword(tempPassword), updatedAt: new Date() },
+  });
 
   return {
     member: { id: member.id, email: member.email, fullName: member.fullName },
@@ -137,18 +105,13 @@ export async function removeTeamMember(
     return { error: "Only the account owner can remove team members" };
   }
 
-  const rows = await db
-    .select({ id: skyobservUsers.id })
-    .from(skyobservUsers)
-    .where(
-      and(eq(skyobservUsers.id, memberId), eq(skyobservUsers.invitedByUserId, owner.id)),
-    )
-    .limit(1);
+  const member = await prisma.skyobservUser.findFirst({
+    where: { id: memberId, invitedByUserId: owner.id },
+    select: { id: true },
+  });
 
-  if (!rows[0]) {
-    return { error: "Team member not found" };
-  }
+  if (!member) return { error: "Team member not found" };
 
-  await db.delete(skyobservUsers).where(eq(skyobservUsers.id, memberId));
+  await prisma.skyobservUser.delete({ where: { id: memberId } });
   return { ok: true };
 }
