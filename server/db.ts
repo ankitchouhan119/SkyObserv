@@ -2,6 +2,7 @@ import "dotenv/config";
 import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
 import * as schema from "@shared/schema";
+import { getDatabaseConnectionOptions } from "@shared/database-url";
 
 const { Pool } = pg;
 
@@ -10,28 +11,13 @@ if (!process.env.DATABASE_URL) {
 }
 
 function buildPoolConfig(): pg.PoolConfig {
-  const raw = process.env.DATABASE_URL!;
-  const url = new URL(raw.replace(/^postgres:\/\//, "postgresql://"));
-  const sslMode = url.searchParams.get("sslmode")?.toLowerCase();
-  const needsSsl =
-    sslMode === "require" ||
-    sslMode === "verify-ca" ||
-    sslMode === "verify-full" ||
-    sslMode === "prefer" ||
-    url.hostname.includes("aivencloud.com");
-
-  // Avoid pg applying strict TLS from sslmode=verify-full in the connection string.
-  url.searchParams.delete("sslmode");
+  const { connectionString, ssl } = getDatabaseConnectionOptions(
+    process.env.DATABASE_URL!,
+  );
 
   return {
-    connectionString: url.toString().replace(/^postgresql:\/\//, "postgres://"),
-    ...(needsSsl
-      ? {
-          ssl: {
-            rejectUnauthorized: false,
-          },
-        }
-      : {}),
+    connectionString,
+    ...(ssl ? { ssl } : {}),
   };
 }
 
