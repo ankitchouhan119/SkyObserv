@@ -140,7 +140,7 @@ EOF
 
 Push to `main` or re-run the CD workflow from GitHub Actions.
 
-Database schema is applied automatically on container start (`docker-entrypoint.sh` runs `drizzle-kit push` before the app). No manual migration step is needed on new EC2 instances as long as `skyobserv.env` has the correct `DATABASE_URL`.
+Database schema is applied automatically on container start (`docker-entrypoint.sh` runs `prisma db push` before the app). No manual migration step is needed on new EC2 instances as long as `skyobserv.env` has the correct `DATABASE_URL`.
 
 ### 6. Production approval gate
 
