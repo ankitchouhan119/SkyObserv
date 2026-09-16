@@ -16,6 +16,9 @@ FROM node:20-alpine
 WORKDIR /app
 
 ENV NODE_ENV=production
+# Some managed Postgres hosts (RDS, Aiven) present self-signed cert chains.
+# This flag lets Node connect without rejecting them at the TLS layer.
+ENV NODE_TLS_REJECT_UNAUTHORIZED=0
 
 COPY package*.json ./
 COPY prisma ./prisma
