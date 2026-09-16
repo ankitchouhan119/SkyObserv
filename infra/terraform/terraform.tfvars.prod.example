@@ -1,0 +1,8 @@
+aws_region        = "ap-south-1"
+project_name      = "skyobserv-prod"
+instance_type     = "t3.small"
+db_instance_class = "db.t3.small"
+db_password       = "CHANGE_ME"
+key_name          = "skyobserv"
+enable_alb        = true
+enable_nat        = false

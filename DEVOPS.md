@@ -68,12 +68,14 @@ PR merged  →  build image → push GHCR → deploy staging → manual approval
 
 ```bash
 cd infra/terraform
-cp terraform.tfvars.example terraform.tfvars
-# set db_password and key_name
+cp terraform.tfvars.stg.example terraform.tfvars.stg
+cp terraform.tfvars.prod.example terraform.tfvars.prod
+# set db_password and key_name in both files
 
-terraform init
-terraform plan
-terraform apply
+terraform init -backend-config=backend-config.hcl
+terraform workspace select staging
+terraform plan  -var-file=terraform.tfvars.stg
+terraform apply -var-file=terraform.tfvars.stg
 ```
 
 ```bash
@@ -83,13 +85,24 @@ terraform output rds_endpoint
 
 ### 2. Remote state (optional but recommended)
 
+Terraform state lives in **S3** (not on your laptop). **Versioning** lets you recover old state if something goes wrong. **`use_lockfile = true`** creates a `.tflock` file next to the state so two people can't run `apply` at the same time — no DynamoDB table needed (Terraform 1.10+).
+
 ```bash
-# creates S3 bucket + DynamoDB table
+# creates S3 bucket with versioning enabled
 ./infra/terraform/backend-setup.sh
 
-# then uncomment backend "s3" block in versions.tf and:
-terraform init -migrate-state
+terraform init -backend-config=backend-config.hcl
 ```
+
+**Workspaces** (staging / prod share the same `.tf` code; state is separate in S3):
+
+```bash
+terraform workspace list          # all workspaces (* = current)
+terraform workspace show          # current workspace name
+terraform workspace select prod   # switch env (no re-init needed)
+```
+
+After cloning the repo, a teammate runs `terraform init -backend-config=backend-config.hcl` once — workspaces are read from S3, not from git. Copy `terraform.tfvars.*.example` files locally; they are gitignored.
 
 ### 3. GitHub secrets
 
@@ -219,6 +232,28 @@ The script also deletes manual snapshots older than 30 days.
 ---
 
 ## Troubleshooting
+
+**Terraform state lock (`Error acquiring the state lock`):**
+
+S3 locking (`use_lockfile = true`) writes `infra.tfstate.tflock` next to the state file. This usually means a previous `plan`/`apply` was interrupted (Ctrl+C) or is still running.
+
+1. Check that no other `terraform plan` or `terraform apply` is running (your machine, a teammate, or CI).
+2. If nothing is running, the lock is stale. Copy the lock ID from the error output and run:
+
+```bash
+cd infra/terraform
+terraform force-unlock <LOCK_ID>
+```
+
+Example:
+
+```bash
+terraform force-unlock c5a4726c-67f2-fb99-cee5-45d6fd651101
+```
+
+3. Retry `terraform plan` or `terraform apply`.
+
+Only force-unlock when you are sure no other Terraform operation is in progress. Do not use `-lock=false` for routine runs.
 
 **Container keeps restarting:**
 ```bash

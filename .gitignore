@@ -11,4 +11,8 @@ infra/terraform/.terraform/
 infra/terraform/*.tfstate
 infra/terraform/*.tfstate.*
 infra/terraform/*.tfvars
-!infra/terraform/terraform.tfvars.example
+!infra/terraform/terraform.tfvars.stg.example
+!infra/terraform/terraform.tfvars.prod.example
+
+# cluster monitoring repo
+cluster-monitoring/

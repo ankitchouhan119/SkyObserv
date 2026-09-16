@@ -1,5 +1,5 @@
 terraform {
-  required_version = ">= 1.5.0"
+  required_version = ">= 1.10.0"
 
   required_providers {
     aws = {
@@ -8,14 +8,9 @@ terraform {
     }
   }
 
-  # Remote state - run backend-setup.sh first, then uncomment + run: terraform init -migrate-state
-  # backend "s3" {
-  #   bucket         = "8byte-tf-state-ankit"
-  #   key            = "skyobserv/infra.tfstate"
-  #   region         = "ap-south-1"
-  #   dynamodb_table = "terraform-locks"
-  #   encrypt        = true
-  # }
+  # Remote state — init once, then switch env with: terraform workspace select staging|prod
+  # terraform init -backend-config=backend-config.hcl
+  backend "s3" {}
 }
 
 provider "aws" {
