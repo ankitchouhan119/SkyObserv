@@ -6,6 +6,7 @@ COPY package*.json ./
 RUN npm install
 
 COPY . .
+RUN npx prisma generate
 RUN npm run build
 
 
@@ -16,13 +17,13 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 COPY package*.json ./
-RUN npm ci --omit=dev && npm install -g tsx
+COPY prisma ./prisma
+RUN npm ci --omit=dev && npm install -g tsx && npx prisma generate
 
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/server ./server
 COPY --from=builder /app/shared ./shared
 COPY --from=builder /app/tsconfig.json ./
-COPY --from=builder /app/drizzle.config.ts ./
 
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh

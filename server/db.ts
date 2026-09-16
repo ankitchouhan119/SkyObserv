@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 import pg from "pg";
 import { getDatabaseConnectionOptions } from "@shared/database-url";
@@ -9,19 +10,9 @@ if (!process.env.DATABASE_URL) {
 
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
-export const prisma =
-  globalForPrisma.prisma ??
-  new PrismaClient({
-    log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
-  });
-
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
-}
-
-// pg.Pool is kept only for connect-pg-simple (session store).
 const { Pool } = pg;
 const opts = getDatabaseConnectionOptions(process.env.DATABASE_URL);
+
 export const pool = new Pool({
   host: opts.host,
   port: opts.port,
@@ -35,3 +26,16 @@ export const pool = new Pool({
 pool.on("error", (err) => {
   console.error("[db] Unexpected pool error:", err.message);
 });
+
+function createPrismaClient() {
+  return new PrismaClient({
+    adapter: new PrismaPg(pool),
+    log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
+  });
+}
+
+export const prisma = globalForPrisma.prisma ?? createPrismaClient();
+
+if (process.env.NODE_ENV !== "production") {
+  globalForPrisma.prisma = prisma;
+}
