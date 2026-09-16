@@ -17,6 +17,7 @@ resource "aws_instance" "app" {
   associate_public_ip_address = true
   key_name                    = var.key_name
 
+
   root_block_device {
     volume_size = 20
   }
