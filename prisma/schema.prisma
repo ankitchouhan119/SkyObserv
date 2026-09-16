@@ -75,3 +75,13 @@ model UserPreference {
 
   @@map("user_preferences")
 }
+
+// Managed by connect-pg-simple at runtime — included here so prisma db push
+// does not try to drop the sessions table on deploy.
+model SkyobservSession {
+  sid    String   @id @db.VarChar
+  sess   Json
+  expire DateTime @db.Timestamp(6)
+
+  @@map("skyobserv_sessions")
+}
