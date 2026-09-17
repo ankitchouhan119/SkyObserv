@@ -264,6 +264,7 @@ const schema = buildSchema(`
     getServiceInstances(serviceId: ID!, duration: Duration!): [ServiceInstance]
     findEndpoint(serviceId: ID!, keyword: String!, limit: Int): [Endpoint]
     getLinearIntValues(metric: MetricCondition!, duration: Duration!): MetricValues
+    getMultipleLinearIntValues(metric: MetricCondition!, numOfLinear: Int!, duration: Duration!): [MetricValues!]!
     getServiceMetrics(serviceId: ID!, duration: Duration!): MetricValues
     getGlobalTopology(duration: Duration!): Topology
     getServicesTopology(serviceIds: [ID!]!, duration: Duration!): Topology
@@ -320,9 +321,10 @@ function generateTraces(count = 20) {
   });
 }
 
-function generateSpans(traceId) {
+function generateSpans(traceId, forceError = false) {
   const now = Date.now();
   const apiStart = now - 400;
+  const isError = forceError || (traceId && parseInt(traceId.slice(-1), 16) % 4 === 0);
 
   return [
     {
@@ -391,9 +393,14 @@ function generateSpans(traceId) {
       startTime: apiStart + 200, endTime: apiStart + 260,
       endpointName: 'POST:/payment/initiate',
       type: 'Exit', peer: 'travobuds-payment:5001', component: 'HttpClient',
-      isError: false, layer: 'Http',
-      tags: [{ key: 'http.method', value: 'POST' }],
-      logs: [],
+      isError: isError, layer: 'Http',
+      tags: [
+        { key: 'http.method', value: 'POST' },
+        ...(isError ? [{ key: 'http.status_code', value: '500' }] : []),
+      ],
+      logs: isError
+        ? [{ time: apiStart + 240, data: [{ key: 'error.message', value: 'Payment gateway timeout' }] }]
+        : [],
     },
     {
       traceId,
@@ -430,9 +437,32 @@ const root = {
       service_cpm:       [20, 200],
       service_sla:       [9200, 10000],
       service_apdex:     [7000, 10000],
+      endpoint_resp_time: [40, 2500],
     };
-    const [min, max] = ranges[metric.name] || [50, 500];
+    let min;
+    let max;
+    if (metric.name === 'endpoint_resp_time' && metric.id) {
+      const seed = String(metric.id).split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+      min = 50 + (seed % 400);
+      max = min + 200 + (seed % 1800);
+    } else {
+      [min, max] = ranges[metric.name] || [50, 500];
+    }
     return { values: timeSeriesValues(60, min, max) };
+  },
+
+  getMultipleLinearIntValues: ({ numOfLinear }) => {
+    const percentileRanges = [
+      [80, 200],
+      [120, 350],
+      [180, 500],
+      [250, 800],
+      [400, 1500],
+    ];
+    const count = Math.min(numOfLinear || 5, percentileRanges.length);
+    return percentileRanges.slice(0, count).map(([min, max]) => ({
+      values: timeSeriesValues(60, min, max),
+    }));
   },
 
   getGlobalTopology: () => GLOBAL_TOPO,
@@ -447,12 +477,28 @@ const root = {
     };
   },
 
-  queryBasicTraces: ({ condition }) => ({
-    traces: generateTraces(condition?.pageSize || 20),
-  }),
+  queryBasicTraces: ({ condition }) => {
+    const pageSize = condition?.pageSize || 20;
+    let traces = generateTraces(pageSize);
+
+    if (condition?.traceState === 'ERROR') {
+      traces = traces.filter((trace) => trace.isError);
+      if (traces.length === 0) {
+        traces = generateTraces(pageSize).map((trace) => ({
+          ...trace,
+          isError: true,
+          duration: randomBetween(800, 3200),
+        }));
+      }
+    } else if (condition?.traceState === 'SUCCESS') {
+      traces = traces.filter((trace) => !trace.isError);
+    }
+
+    return { traces };
+  },
 
   queryTrace: ({ traceId }) => ({
-    spans: generateSpans(traceId || makeTraceId()),
+    spans: generateSpans(traceId || makeTraceId(), false),
   }),
 
   readMetricsValue: ({ condition }) => {

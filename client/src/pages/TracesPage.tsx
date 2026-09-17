@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { TraceList } from '@/components/traces/TraceList';
 import { useQuery } from '@apollo/client';
@@ -16,8 +16,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Search, AlertCircle, Server } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Search, AlertCircle, Server, GitCompare } from 'lucide-react';
 import { useLocation } from 'wouter';
+import { ErrorFingerprintPanel } from '@/components/traces/ErrorFingerprintPanel';
+import { TraceCompareView } from '@/components/traces/TraceCompareView';
+import { aggregateTraceListFingerprints } from '@/lib/traceAnalysis';
 
 export default function TracesPage() {
   const [, setLocation] = useLocation();
@@ -27,6 +31,9 @@ export default function TracesPage() {
   const [status, setStatus] = useState<'ALL' | 'SUCCESS' | 'ERROR'>('ALL');
   const [minDuration, setMinDuration] = useState('');
   const [serviceId, setServiceId] = useState('ALL');
+  const [compareMode, setCompareMode] = useState(false);
+  const [compareSelection, setCompareSelection] = useState<string[]>([]);
+  const [showCompareView, setShowCompareView] = useState(false);
 
   const { data: servicesData } = useQuery(GET_ALL_SERVICES, {
     variables: { duration: durationObj },
@@ -56,11 +63,26 @@ export default function TracesPage() {
     fetchPolicy: 'network-only',
   });
 
+  const traces = data?.queryBasicTraces?.traces ?? [];
+  const errorFingerprints = useMemo(
+    () => aggregateTraceListFingerprints(traces),
+    [traces],
+  );
+
   const handleTraceSelect = (traceId: string) => {
+    if (compareMode) return;
     setLocation(`/traces/${traceId}`);
   };
 
-  const traces = data?.queryBasicTraces?.traces ?? [];
+  const handleCompareToggle = (traceId: string, checked: boolean) => {
+    setCompareSelection((current) => {
+      if (checked) {
+        if (current.includes(traceId) || current.length >= 2) return current;
+        return [...current, traceId];
+      }
+      return current.filter((id) => id !== traceId);
+    });
+  };
 
   useEffect(() => {
     const handleAutoUpdate = (e: any) => {
@@ -96,13 +118,8 @@ export default function TracesPage() {
 
   return (
     <AppLayout>
-      <div className="h-[calc(100vh-140px)] flex flex-col so-page">
-        <div className="so-page-header">
-          <h2>Traces</h2>
-          <p>Browse distributed traces across your services.</p>
-        </div>
-
-        <div className="so-filter-bar">
+      <div className="flex flex-col h-[calc(100dvh-var(--header-height)-2.5rem)] min-h-0 w-full gap-4">
+        <div className="so-filter-bar shrink-0">
           <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-2">
               <Server className="w-4 h-4 text-primary" />
@@ -156,18 +173,62 @@ export default function TracesPage() {
                   placeholder="0"
                 />
               </div>
+
+              <Button
+                variant={compareMode ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => {
+                  setCompareMode((value) => !value);
+                  setCompareSelection([]);
+                  setShowCompareView(false);
+                }}
+              >
+                <GitCompare className="w-4 h-4 mr-2" />
+                Compare
+              </Button>
+
+              {compareMode && compareSelection.length === 2 && (
+                <Button size="sm" onClick={() => setShowCompareView(true)}>
+                  Compare selected
+                </Button>
+              )}
             </div>
           </div>
         </div>
 
-        {error ? (
+        {showCompareView && compareSelection.length === 2 ? (
+          <div className="flex-1 min-h-0 overflow-y-auto">
+            <TraceCompareView
+              traceIdA={compareSelection[0]}
+              traceIdB={compareSelection[1]}
+              onClose={() => setShowCompareView(false)}
+            />
+          </div>
+        ) : error ? (
           <div className="flex-1 flex flex-col items-center justify-center text-destructive gap-2 so-card">
             <AlertCircle className="w-10 h-10 opacity-50" />
             <p className="font-medium text-sm">Failed to load traces: {error.message}</p>
           </div>
         ) : (
-          <div className="flex-1 min-h-0">
-            <TraceList traces={traces} loading={loading} onSelectTrace={handleTraceSelect} />
+          <div className="flex-1 min-h-0 grid grid-cols-1 xl:grid-cols-[1fr_22rem] gap-4 overflow-hidden items-stretch">
+            <div className="so-card min-h-0 h-full overflow-hidden flex flex-col p-3">
+            <TraceList
+              traces={traces}
+              loading={loading}
+              onSelectTrace={handleTraceSelect}
+              compareMode={compareMode}
+              compareSelection={compareSelection}
+              onCompareToggle={handleCompareToggle}
+            />
+            </div>
+            <div className="min-h-0 h-full overflow-hidden flex flex-col">
+            <ErrorFingerprintPanel
+              groups={errorFingerprints}
+              loading={loading}
+              title="Error fingerprints"
+              subtitle="Grouped from visible traces in this list"
+            />
+            </div>
           </div>
         )}
       </div>

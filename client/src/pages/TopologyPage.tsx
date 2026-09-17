@@ -3,6 +3,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@apollo/client";
 import { GET_GLOBAL_TOPOLOGY } from "@/apollo/queries/topology";
+import { GET_ALL_SERVICES } from "@/apollo/queries/services";
+import { getTopologyNodeColors, useTopologyHealth } from "@/hooks/use-topology-health";
 import { useDurationStore } from "@/store/useDurationStore";
 import { useTheme } from "@/hooks/useTheme";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -31,6 +33,8 @@ type GraphNode = {
   isReal?: boolean;
   color: string;
   glow: string;
+  ring?: string;
+  healthLabel?: string;
   fx?: number;
   fy?: number;
   x?: number;
@@ -68,6 +72,23 @@ export default function TopologyPage() {
     fetchPolicy: "network-only",
   });
 
+  const { data: servicesData } = useQuery(GET_ALL_SERVICES, {
+    variables: { duration: durationObj },
+  });
+
+  const realServices = (servicesData?.getAllServices ?? []).filter(
+    (service: { layers?: string[] }) =>
+      !service.layers?.some((layer) => layer.includes("DATABASE") || layer.includes("CACHE")),
+  );
+
+  const { healthMap } = useTopologyHealth(
+    realServices.map((service: { id: string; name: string; normal?: boolean }) => ({
+      id: service.id,
+      name: service.name,
+      normal: service.normal,
+    })),
+  );
+
   const isDark = resolvedTheme === "dark";
   const labelColor = isDark ? "#F1F5F9" : "#0F172A";
   const labelMuted = isDark ? "#94A3B8" : "#64748B";
@@ -78,14 +99,21 @@ export default function TopologyPage() {
     const nodesRaw = data?.getGlobalTopology?.nodes ?? [];
     const callsRaw = data?.getGlobalTopology?.calls ?? [];
 
-    const nodes: GraphNode[] = nodesRaw.map((node: GraphNode) => ({
-      id: node.id,
-      name: node.name,
-      type: node.type,
-      isReal: node.isReal,
-      color: node.isReal ? "#3B82F6" : "#64748B",
-      glow: node.isReal ? "rgba(59, 130, 246, 0.45)" : "rgba(100, 116, 139, 0.35)",
-    }));
+    const nodes: GraphNode[] = nodesRaw.map((node: GraphNode) => {
+      const health = healthMap.get(node.id) ?? healthMap.get(node.name);
+      const palette = getTopologyNodeColors(health, Boolean(node.isReal));
+
+      return {
+        id: node.id,
+        name: node.name,
+        type: node.type,
+        isReal: node.isReal,
+        color: palette.color,
+        glow: palette.glow,
+        ring: palette.ring,
+        healthLabel: palette.label,
+      };
+    });
 
     const links = callsRaw.map((call: { source: string; target: string; id: string }) => ({
       source: call.source,
@@ -94,7 +122,7 @@ export default function TopologyPage() {
     }));
 
     return { nodes, links };
-  }, [data]);
+  }, [data, healthMap]);
 
   const stats = useMemo(() => {
     const services = graphData.nodes.filter((n) => n.isReal).length;
@@ -214,7 +242,7 @@ export default function TopologyPage() {
       ctx.fill();
 
       const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
-      gradient.addColorStop(0, node.isReal ? "#60A5FA" : "#94A3B8");
+      gradient.addColorStop(0, node.ring ?? node.color);
       gradient.addColorStop(1, node.color);
       ctx.beginPath();
       ctx.arc(x, y, radius, 0, 2 * Math.PI, false);
@@ -353,26 +381,32 @@ export default function TopologyPage() {
                     <GraphToolButton icon={RefreshCw} label="Refresh" onClick={() => refetch()} />
                   </div>
 
-                  <div className="absolute bottom-3 left-3 flex items-center gap-2 rounded-full border border-border/80 bg-card/90 backdrop-blur-md px-3 py-1.5 text-[11px] text-muted-foreground shadow-sm z-20">
-                    <MousePointer2 className="w-3.5 h-3.5 text-primary" />
-                    Hover to highlight · Drag to move · Click to focus
+                  <div className="absolute bottom-3 left-3 flex flex-wrap items-center gap-2 z-20">
+                    <div className="flex items-center gap-2 rounded-full border border-border/80 bg-card/90 backdrop-blur-md px-3 py-1.5 text-[11px] text-muted-foreground shadow-sm">
+                      <MousePointer2 className="w-3.5 h-3.5 text-primary" />
+                      Hover · Drag · Click to focus
+                    </div>
+                    <div className="flex items-center gap-2 rounded-full border border-border/80 bg-card/90 backdrop-blur-md px-3 py-1.5 text-[10px] shadow-sm">
+                      <span className="inline-flex items-center gap-1 text-emerald-500"><span className="h-2 w-2 rounded-full bg-emerald-500" />Healthy</span>
+                      <span className="inline-flex items-center gap-1 text-amber-500"><span className="h-2 w-2 rounded-full bg-amber-500" />Degraded</span>
+                      <span className="inline-flex items-center gap-1 text-red-500"><span className="h-2 w-2 rounded-full bg-red-500" />Abnormal</span>
+                      <span className="inline-flex items-center gap-1 text-slate-400"><span className="h-2 w-2 rounded-full bg-slate-400" />External</span>
+                    </div>
                   </div>
 
                   {activeNode && (
                     <div className="absolute bottom-3 right-3 w-64 rounded-xl border border-border/80 bg-card/95 backdrop-blur-md p-3 shadow-lg z-20 animate-in fade-in slide-in-from-bottom-2 duration-200">
                       <div className="flex items-start gap-2.5">
                         <div
-                          className={cn(
-                            "mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full ring-2 ring-offset-2 ring-offset-card",
-                            activeNode.isReal ? "bg-primary ring-primary/30" : "bg-slate-400 ring-slate-400/30",
-                          )}
+                          className="mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full ring-2 ring-offset-2 ring-offset-card"
+                          style={{ backgroundColor: activeNode.color, boxShadow: `0 0 0 2px ${activeNode.glow}` }}
                         />
                         <div className="min-w-0 flex-1">
                           <p className="text-xs font-semibold text-foreground truncate" title={activeNode.name}>
                             {activeNode.name}
                           </p>
                           <p className="text-[11px] text-muted-foreground mt-0.5">
-                            {activeNode.isReal ? "Active service" : "External dependency"}
+                            {activeNode.isReal ? activeNode.healthLabel ?? "Active service" : "External dependency"}
                             {activeNode.type ? ` · ${activeNode.type}` : ""}
                           </p>
                           {activeNode.isReal && (
@@ -406,6 +440,7 @@ export default function TopologyPage() {
                 hoveredId={hoveredId}
                 onSelect={focusNode}
                 onHover={setHoveredId}
+                showHealth
               />
               <NodeGroup
                 title="External / virtual"
@@ -481,6 +516,7 @@ function NodeGroup({
   hoveredId,
   onSelect,
   onHover,
+  showHealth = false,
 }: {
   title: string;
   nodes: GraphNode[];
@@ -488,6 +524,7 @@ function NodeGroup({
   hoveredId: string | null;
   onSelect: (node: GraphNode) => void;
   onHover: (id: string | null) => void;
+  showHealth?: boolean;
 }) {
   if (nodes.length === 0) return null;
 
@@ -516,10 +553,14 @@ function NodeGroup({
                 <span
                   className={cn(
                     "h-2 w-2 shrink-0 rounded-full",
-                    node.isReal ? "bg-primary" : "bg-slate-400",
+                    !showHealth && (node.isReal ? "bg-primary" : "bg-slate-400"),
                   )}
+                  style={showHealth ? { backgroundColor: node.color } : undefined}
                 />
-                <span className="truncate font-medium">{formatNodeLabel(node.name)}</span>
+                <span className="truncate font-medium flex-1">{formatNodeLabel(node.name)}</span>
+                {showHealth && node.healthLabel ? (
+                  <span className="text-[10px] text-muted-foreground shrink-0">{node.healthLabel}</span>
+                ) : null}
               </button>
             </li>
           );

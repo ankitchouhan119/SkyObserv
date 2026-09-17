@@ -164,6 +164,7 @@ docker run -d --name skywalking-oap-local \
 
 ```
 ```bash
+# Optional: Kubernetes monitoring (local Minikube / kind — mount YOUR kube + minikube paths)
 docker run -d \
   --name skywalking-oap-local \
   --network host \
@@ -174,11 +175,13 @@ docker run -d \
   -e SW_OTEL_RECEIVER_ENABLED_HANDLERS="otlp-metrics" \
   -e SW_OTEL_RECEIVER_ENABLED_OTEL_METRICS_RULES="k8s/k8s-cluster,k8s/k8s-node,k8s/k8s-service,k8s/k8s-instance" \
   -e JAVA_OPTS="-Xms1g -Xmx1g" \
-  -v ~/.kube/config:/root/.kube/config:ro \
-  -v /home/ankit119/.minikube:/home/ankit119/.minikube:ro \
+  -v "$HOME/.kube/config:/root/.kube/config:ro" \
+  -v "$HOME/.minikube:$HOME/.minikube:ro" \
   apache/skywalking-oap-server:10.0.0
-
 ```
+
+See **Docs → Kubernetes monitoring** in the SkyObserv UI for production setup with RBAC, kube-state-metrics, and OpenTelemetry Collector (`oap-deploy/k8s-rbac.yaml`, `oap-deploy/k8s-otel-collector.yaml`).
+
 ### Setting Demo App to test Observability
 
 ```bash
@@ -615,27 +618,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ---
 
 **Built with ❤️ using TamboAI Generative UI**
-
-
-
-
-
-
-
-  docker rm -f skywalking-oap-local                 
-
-docker run -d \
-  --name skywalking-oap-local \
-  --network host \
-  -e SW_STORAGE=elasticsearch \
-  -e SW_STORAGE_ES_CLUSTER_NODES=127.0.0.1:9200 \
-  -e SW_OTEL_RECEIVER=default \
-  -e SW_K8S_MONITORING_ENABLED=default \
-  -e SW_OTEL_RECEIVER_ENABLED_HANDLERS="otlp-metrics" \
-  -e SW_OTEL_RECEIVER_ENABLED_OTEL_METRICS_RULES="k8s/k8s-cluster,k8s/k8s-node,k8s/k8s-service,k8s/k8s-instance" \
-  -e JAVA_OPTS="-Xms1g -Xmx1g" \
-  -v ~/.kube/config:/root/.kube/config:ro \
-  -v /home/ankit119/.minikube:/home/ankit119/.minikube:ro \
-  apache/skywalking-oap-server:10.0.0
-
 

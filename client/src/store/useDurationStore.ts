@@ -11,8 +11,12 @@ interface DurationObj {
 interface DurationState {
   label: string;
   durationObj: DurationObj;
+  autoRefreshMs: number;
+  /** Bumped on every refresh so Apollo refetches even within the same minute bucket. */
+  refreshKey: number;
   setDuration: (label: string, minutes: number, step: Step) => void;
-  setCustomRange: (startDate: string, endDate: string) => void; 
+  setCustomRange: (startDate: string, endDate: string) => void;
+  setAutoRefresh: (ms: number) => void;
   refresh: () => void;
 }
 
@@ -34,6 +38,8 @@ const formatSkyTime = (date: Date, step: Step) => {
 
 export const useDurationStore = create<DurationState>((set, get) => ({
   label: 'Last 15 Minutes',
+  autoRefreshMs: 60_000,
+  refreshKey: 0,
   durationObj: {
     start: formatSkyTime(new Date(Date.now() - 15 * 60 * 1000), 'MINUTE'),
     end: formatSkyTime(new Date(), 'MINUTE'),
@@ -81,11 +87,19 @@ setCustomRange: (startDate: string, endDate: string) => {
   });
 },
 
+  setAutoRefresh: (ms) => set({ autoRefreshMs: ms }),
+
   refresh: () => {
     const { label } = get();
-    // Custom date stays static until manual change
-    if (label === 'Custom Date') return;
-    
+    const bump = (patch: Partial<DurationState> = {}) =>
+      set((state) => ({ ...patch, refreshKey: state.refreshKey + 1 }));
+
+    // Custom range: keep dates, still refetch active queries.
+    if (label === 'Custom Date') {
+      bump();
+      return;
+    }
+
     let mins = 15;
     if (label.includes('30')) mins = 30;
     else if (label.includes('1 Hour')) mins = 60;
@@ -94,6 +108,17 @@ setCustomRange: (startDate: string, endDate: string) => {
     else if (label.includes('24 Hour')) mins = 1440;
 
     const step: Step = mins >= 60 ? 'HOUR' : 'MINUTE';
-    get().setDuration(label, mins, step);
-  }
+    const now = new Date();
+    const end = new Date(now.getTime() - 2 * 60 * 1000);
+    const start = new Date(end.getTime() - mins * 60 * 1000);
+
+    bump({
+      label,
+      durationObj: {
+        start: formatSkyTime(start, step),
+        end: formatSkyTime(end, step),
+        step,
+      },
+    });
+  },
 }));

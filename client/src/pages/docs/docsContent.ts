@@ -1,4 +1,4 @@
-export type DocCategory = "start" | "languages" | "data" | "frameworks";
+export type DocCategory = "start" | "platform" | "languages" | "data" | "frameworks";
 
 export type CalloutKind = "note" | "warning" | "info";
 
@@ -21,6 +21,7 @@ export type DocTopic = {
 
 export const DOC_CATEGORIES: { id: DocCategory; label: string }[] = [
   { id: "start", label: "Getting started" },
+  { id: "platform", label: "Platform" },
   { id: "languages", label: "Languages" },
   { id: "data", label: "Data stores" },
   { id: "frameworks", label: "ORMs & frameworks" },
@@ -113,10 +114,146 @@ SKYOBSERV_REGISTER_URL=https://your-skyobserv-host`,
       {
         title: "Next steps",
         bullets: [
+          "Kubernetes cluster monitoring — see Kubernetes monitoring guide",
           "Node.js / Express — see Node.js agent guide",
           "PostgreSQL via Prisma — see Prisma guide (extra setup required)",
           "Redis — see Redis guide (automatic with ioredis on Node)",
           "Java or Python — see the language-specific guide",
+        ],
+      },
+    ],
+  },
+  {
+    slug: "kubernetes",
+    title: "Kubernetes monitoring",
+    description: "Enable cluster, node, and pod metrics in SkyObserv through SkyWalking OAP and the Kubernetes API.",
+    category: "platform",
+    blocks: [
+      {
+        title: "What SkyObserv shows",
+        body: "The Kubernetes section reads infrastructure metadata and MQE metrics that SkyWalking OAP collects from your cluster — cluster health, nodes, namespaces, pods, CPU/memory, and pod phase. Application traces from workloads still require the SkyWalking language agent (see Node.js / Java / Python guides).",
+        bullets: [
+          "Cluster overview — nodes, namespaces, pod counts, resource pressure",
+          "Workload explorer — filter pods by node and namespace",
+          "Pod detail — status, attributes, events, and resource usage",
+        ],
+      },
+      {
+        title: "Who can see Kubernetes data",
+        callout: {
+          kind: "warning",
+          text: "Kubernetes views are available only to the account owner (admin). Team members invited under your account cannot access K8s layers, even if their services run inside the cluster.",
+        },
+        body: "Sign in with the primary SkyObserv account that owns the API token. After OAP is wired to a cluster, open Dashboard → Kubernetes.",
+      },
+      {
+        title: "Architecture (two pieces)",
+        ordered: [
+          "Metrics path — kube-state-metrics (and cAdvisor via kubelet) expose cluster metrics. OpenTelemetry Collector scrapes them and forwards OTLP metrics to OAP. OAP also calls the Kubernetes API for pod/service metadata.",
+          "Traces path — each workload runs a SkyWalking agent registered with SKYOBSERV_REGISTER_URL (same as a VM deployment). Pod names become SW_AGENT_INSTANCE values.",
+        ],
+      },
+      {
+        title: "OAP environment variables",
+        body: "Enable the OpenTelemetry receiver and K8s metric rules on the OAP container. These match SkyWalking 10.x defaults used by SkyObserv.",
+        code: [
+          {
+            language: "env",
+            content: `SW_OTEL_RECEIVER=default
+SW_OTEL_RECEIVER_ENABLED_HANDLERS=otlp-metrics
+SW_OTEL_RECEIVER_ENABLED_OTEL_METRICS_RULES=k8s/k8s-cluster,k8s/k8s-node,k8s/k8s-service,k8s/k8s-instance
+SW_K8S_MONITORING_ENABLED=default`,
+            caption: "Required on OAP for Kubernetes layers",
+          },
+        ],
+      },
+      {
+        title: "RBAC (required)",
+        body: "OAP needs read-only access to pods, services, nodes, namespaces, deployments, and replicasets. Apply the manifest shipped with SkyObserv (oap-deploy/k8s-rbac.yaml) or grant equivalent permissions to the OAP ServiceAccount / kubeconfig user.",
+        code: [
+          {
+            language: "bash",
+            content: `kubectl create namespace skywalking --dry-run=client -o yaml | kubectl apply -f -
+kubectl apply -f oap-deploy/k8s-rbac.yaml`,
+          },
+        ],
+      },
+      {
+        title: "Production setup (recommended)",
+        ordered: [
+          "Install kube-state-metrics in the cluster (Helm chart or your platform bundle).",
+          "Deploy OpenTelemetry Collector to scrape kube-state-metrics and export OTLP to OAP (:11800). See oap-deploy/k8s-otel-collector.yaml for a minimal example — adjust the kube-state-metrics target namespace if yours differs.",
+          "Run OAP with the environment variables above and a ServiceAccount that has the RBAC from k8s-rbac.yaml.",
+          "Wait 2–3 minutes after OAP restart, then open SkyObserv → Kubernetes.",
+        ],
+        callout: {
+          kind: "info",
+          text: "On AWS EKS / managed Kubernetes, prefer in-cluster OAP (or Satellite) with a ServiceAccount. Mounting a developer kubeconfig onto a remote EC2 OAP instance only works for lab setups.",
+        },
+      },
+      {
+        title: "Local development (Minikube / kind)",
+        body: "For a single-node lab cluster you can run OAP on the host with your kubeconfig mounted. Replace the minikube path with your actual MINIKUBE_HOME if you use Minikube.",
+        code: [
+          {
+            language: "bash",
+            content: `docker run -d --name skywalking-oap-local \\
+  --network host \\
+  -e SW_STORAGE=elasticsearch \\
+  -e SW_STORAGE_ES_CLUSTER_NODES=127.0.0.1:9200 \\
+  -e SW_OTEL_RECEIVER=default \\
+  -e SW_K8S_MONITORING_ENABLED=default \\
+  -e SW_OTEL_RECEIVER_ENABLED_HANDLERS=otlp-metrics \\
+  -e SW_OTEL_RECEIVER_ENABLED_OTEL_METRICS_RULES=k8s/k8s-cluster,k8s/k8s-node,k8s/k8s-service,k8s/k8s-instance \\
+  -e JAVA_OPTS="-Xms1g -Xmx1g" \\
+  -v "$HOME/.kube/config:/root/.kube/config:ro" \\
+  -v "$HOME/.minikube:$HOME/.minikube:ro" \\
+  apache/skywalking-oap-server:10.0.0`,
+            caption: "Host-network OAP with kubeconfig — lab only",
+          },
+        ],
+      },
+      {
+        title: "Instrument workloads in Kubernetes",
+        body: "Add the SkyWalking agent to your Deployment manifest using the same registration flow as bare-metal. Use the pod name for the instance id when possible.",
+        code: [
+          {
+            language: "yaml",
+            content: `env:
+  - name: SW_AGENT_ENABLED
+    value: "true"
+  - name: SW_AGENT_NAME
+    value: "my-api"
+  - name: SW_AGENT_INSTANCE
+    valueFrom:
+      fieldRef:
+        fieldPath: metadata.name
+  - name: SKYOBSERV_USER_TOKEN
+    valueFrom:
+      secretKeyRef:
+        name: skyobserv-agent
+        key: token
+  - name: SKYOBSERV_REGISTER_URL
+    value: "https://your-skyobserv-host"`,
+          },
+        ],
+      },
+      {
+        title: "Verify",
+        ordered: [
+          "curl OAP GraphQL: curl -s http://localhost:12800/graphql -H 'Content-Type: application/json' -d '{\"query\":\"{ version }\"}'",
+          "Query layers: listServices(layer: \"K8S\") should return k8s-cluster::…",
+          "SkyObserv → Kubernetes shows worker nodes and namespaces (admin account).",
+          "SkyObserv → Services shows your instrumented workloads with traces.",
+        ],
+      },
+      {
+        title: "Troubleshooting",
+        bullets: [
+          "Empty Kubernetes page — confirm you are on the admin account, OAP env vars are set, RBAC is applied, and OAP can reach the API server (check docker logs skywalking-oap).",
+          "Metrics but no pods — kube-state-metrics or OTel Collector not scraping; confirm OTel pipeline reaches OAP :11800.",
+          "Pods but no application traces — agent not registered in the pod; verify SKYOBSERV_* env vars and that instrumentation loads before Express/Prisma.",
+          "Wrong minikube path — update the -v mount to your MINIKUBE_HOME; kubeconfig server URL must be reachable from inside the OAP container.",
         ],
       },
     ],

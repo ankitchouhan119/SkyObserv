@@ -8,8 +8,10 @@ import { GET_ALL_DATABASES } from '@/apollo/queries/database';
 import { useDurationStore } from '@/store/useDurationStore';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Input } from '@/components/ui/input';
-import { Link } from 'wouter';
-import { Search, Server, Activity, Zap, Database, AlertTriangle } from 'lucide-react';
+import { Search, Server, Activity, Database, AlertTriangle } from 'lucide-react';
+import { ServiceOverviewCard } from '@/components/services/ServiceOverviewCard';
+import { FailedTracesPanel } from '@/components/services/FailedTracesPanel';
+import { SlowEndpointsLeaderboard } from '@/components/services/SlowEndpointsLeaderboard';
 
 const statCards = [
   { key: 'services', label: 'Services', icon: Server, wrap: 'bg-blue-50 text-blue-600' },
@@ -66,12 +68,10 @@ export default function ServicesPage() {
 
   const { data: servicesData, loading: servicesLoading } = useQuery(GET_ALL_SERVICES, {
     variables: { duration: durationObj },
-    pollInterval: 60000,
   });
 
   const { data: topologyData } = useQuery(GET_GLOBAL_TOPOLOGY, {
     variables: { duration: durationObj },
-    pollInterval: 60000,
   });
 
   const { data: dbData } = useQuery(GET_ALL_DATABASES, {
@@ -87,8 +87,8 @@ export default function ServicesPage() {
   );
 
   const databases = dbData?.getAllDatabases || [];
-  const healthyCount = realServices.filter((s: any) => s.normal === true).length;
-  const unhealthyCount = realServices.length - healthyCount;
+  const healthyCount = realServices.filter((s: ServiceRow) => s.normal === true).length;
+  const unhealthyCount = realServices.filter((s: ServiceRow) => s.normal === false).length;
 
   const stats: Record<string, number | string> = {
     services: servicesLoading ? '—' : realServices.length,
@@ -97,20 +97,15 @@ export default function ServicesPage() {
     unhealthy: servicesLoading ? '—' : unhealthyCount,
   };
 
-  const filteredServices = realServices.filter((s: any) =>
+  const filteredServices = realServices.filter((s: ServiceRow) =>
     s.name.toLowerCase().includes(search.toLowerCase()) ||
     s.group?.toLowerCase().includes(search.toLowerCase()),
   );
 
   return (
     <AppLayout>
-      <div className="space-y-5 max-w-7xl mx-auto">
-        <div>
-          <h2 className="text-lg font-semibold font-[family-name:var(--font-outfit)]">Overview</h2>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Monitor service health and performance across your stack.
-          </p>
-        </div>
+      <div className="so-page">
+        <h2 className="text-lg font-semibold font-[family-name:var(--font-outfit)]">Overview</h2>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {statCards.map(({ key, label, icon: Icon, wrap }) => (
@@ -136,6 +131,13 @@ export default function ServicesPage() {
           ))}
         </div>
 
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+          <FailedTracesPanel />
+          <SlowEndpointsLeaderboard
+            services={realServices.map((s: ServiceRow) => ({ id: s.id, name: s.name }))}
+          />
+        </div>
+
         <div className="relative max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
           <Input
@@ -147,42 +149,17 @@ export default function ServicesPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-          {filteredServices.map((service: any) => {
-            const isNormal = service.normal === true;
-
-            return (
-              <Link key={service.id} href={`/services/${service.id}`}>
-                <div className="so-card-hover p-4 h-full">
-                  <div className="flex items-start justify-between gap-3 mb-3">
-                    <div className="so-icon-wrap bg-primary/10 text-primary">
-                      <Zap className="w-4 h-4" />
-                    </div>
-                    <span className="px-2 py-0.5 rounded-md text-[11px] font-medium bg-muted text-muted-foreground">
-                      {service.group || 'General'}
-                    </span>
-                  </div>
-
-                  <h3 className="text-[15px] font-semibold mb-4 group-hover:text-primary transition-colors truncate">
-                    {service.shortName || service.name}
-                  </h3>
-
-                  <div className="flex items-center justify-between pt-3 border-t border-border text-xs">
-                    <div className="min-w-0 flex-1 pr-3">
-                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">Layers</p>
-                      <p className="font-medium truncate">{(service.layers || []).join(', ') || '—'}</p>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">Status</p>
-                      <div className={`inline-flex items-center gap-1.5 font-medium ${isNormal ? 'so-status-ok' : 'so-status-bad'}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${isNormal ? 'bg-primary' : 'bg-destructive'}`} />
-                        {isNormal ? 'Normal' : 'Abnormal'}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </Link>
-            );
-          })}
+          {filteredServices.map((service: ServiceRow) => (
+            <ServiceOverviewCard
+              key={service.id}
+              id={service.id}
+              name={service.name}
+              shortName={service.shortName}
+              group={service.group}
+              layers={service.layers}
+              normal={service.normal}
+            />
+          ))}
         </div>
 
         {!servicesLoading && filteredServices.length === 0 && (
