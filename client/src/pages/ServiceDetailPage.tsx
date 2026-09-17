@@ -9,7 +9,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MetricChart } from '@/components/charts/MetricChart';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Cpu, Server, Clock, Database, ArrowLeft } from 'lucide-react';
+import { Cpu, Server, Clock, Database, ArrowLeft, Gauge, Activity, Target, AlertTriangle } from 'lucide-react';
+import { apdexLabel } from '@/lib/metricsFormat';
+import { cn } from '@/lib/utils';
 import { useTamboContextHelpers } from "@tambo-ai/react";
 
 export default function ServiceDetailPage() {
@@ -28,7 +30,8 @@ export default function ServiceDetailPage() {
     skip: !serviceId,
   });
 
-  const { latency, throughput, sla } = useServiceMetrics(serviceId, 'Service', durationObj);
+  const { latency, throughput, sla, apdex, errorRate, p95, p99, extendedLoading } =
+    useServiceMetrics(serviceId, 'Service');
 
   const endpoints = endpointsData?.endpoints || [];
   const instances = instancesData?.getServiceInstances || [];
@@ -92,6 +95,36 @@ export default function ServiceDetailPage() {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+              {[
+                { label: 'Apdex', value: apdex > 0 ? apdex.toFixed(2) : '—', sub: apdex > 0 ? apdexLabel(apdex) : '', icon: Target, card: 'so-kpi-violet', iconTone: 'text-violet-500' },
+                { label: 'Error rate', value: `${errorRate}%`, sub: errorRate > 1 ? 'Above target' : 'Within target', icon: AlertTriangle, card: errorRate > 1 ? 'so-kpi-danger' : 'so-kpi-emerald', iconTone: errorRate > 1 ? 'text-red-500' : 'text-emerald-500' },
+                { label: 'P95 latency', value: p95 > 0 ? `${p95}ms` : '—', sub: '95th percentile', icon: Gauge, card: 'so-kpi-sky', iconTone: 'text-sky-500' },
+                { label: 'P99 latency', value: p99 > 0 ? `${p99}ms` : '—', sub: '99th percentile', icon: Activity, card: 'so-kpi-indigo', iconTone: 'text-indigo-500' },
+                { label: 'Avg latency', value: latency.data.length ? `${Math.round(latency.data.at(-1)?.value || 0)}ms` : '—', sub: 'Latest bucket', icon: Clock, card: 'so-kpi-primary', iconTone: 'text-primary' },
+                { label: 'Throughput', value: throughput.data.length ? String(Math.round(throughput.data.at(-1)?.value || 0)) : '—', sub: 'cpm', icon: Server, card: 'so-kpi-cyan', iconTone: 'text-cyan-500' },
+              ].map((kpi) => {
+                const Icon = kpi.icon;
+
+                return (
+                  <div key={kpi.label} className={cn('so-kpi-gradient', kpi.card)}>
+                    {extendedLoading ? (
+                      <div className="h-16 rounded-lg bg-muted/40 animate-pulse" />
+                    ) : (
+                      <>
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{kpi.label}</p>
+                          <Icon className={cn('h-4 w-4', kpi.iconTone)} />
+                        </div>
+                        <p className="text-xl font-bold tabular-nums text-foreground">{kpi.value}</p>
+                        <p className="text-[11px] text-muted-foreground mt-1">{kpi.sub}</p>
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <MetricChart title="Latency (ms)" data={latency.data} loading={latency.loading} unit="ms" color="#2563EB" />
               <MetricChart title="Throughput" data={throughput.data} loading={throughput.loading} unit="cpm" color="#0EA5E9" />

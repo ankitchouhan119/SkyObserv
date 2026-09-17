@@ -22,11 +22,19 @@ export interface Trace {
   traceIds: string[];
 }
 
+export interface SpanRef {
+  traceId?: string;
+  parentSegmentId?: string;
+  parentSpanId?: number;
+  type?: string;
+}
+
 export interface Span {
   traceId: string;
   segmentId: string;
   spanId: number;
   parentSpanId: number;
+  refs?: SpanRef[];
   serviceCode: string;
   serviceInstanceName: string;
   startTime: number;

@@ -49,6 +49,26 @@ set +a
 docker stop skywalking-oap 2>/dev/null || true
 docker rm skywalking-oap 2>/dev/null || true
 
+K8S_ENV=()
+K8S_MOUNTS=()
+if [[ "${K8S_MONITORING_ENABLED:-false}" == "true" ]]; then
+  K8S_ENV+=(
+    -e SW_OTEL_RECEIVER=default
+    -e SW_K8S_MONITORING_ENABLED=default
+    -e SW_OTEL_RECEIVER_ENABLED_HANDLERS=otlp-metrics
+    -e SW_OTEL_RECEIVER_ENABLED_OTEL_METRICS_RULES=k8s/k8s-cluster,k8s/k8s-node,k8s/k8s-service,k8s/k8s-instance
+  )
+  if [[ -n "${KUBECONFIG_HOST_PATH:-}" ]]; then
+    K8S_MOUNTS+=(-v "${KUBECONFIG_HOST_PATH}:/root/.kube/config:ro")
+  fi
+  if [[ -n "${MINIKUBE_HOME_PATH:-}" ]]; then
+    K8S_MOUNTS+=(-v "${MINIKUBE_HOME_PATH}:${MINIKUBE_HOME_PATH}:ro")
+  fi
+  echo "Kubernetes monitoring enabled on OAP."
+else
+  echo "Kubernetes monitoring disabled (set K8S_MONITORING_ENABLED=true in .env to enable)."
+fi
+
 docker run -d \
   --name skywalking-oap \
   --restart unless-stopped \
@@ -73,6 +93,8 @@ docker run -d \
   -e SW_RECEIVER_ZIPKIN=- \
   -e SW_RECEIVER_BROWSER=- \
   -e JAVA_OPTS='-Xms768m -Xmx1536m -XX:MaxMetaspaceSize=384m -XX:CompressedClassSpaceSize=128m -XX:+UseSerialGC -XX:TieredStopAtLevel=1' \
+  "${K8S_ENV[@]}" \
+  "${K8S_MOUNTS[@]}" \
   apache/skywalking-oap-server:10.0.0
 
 echo ""

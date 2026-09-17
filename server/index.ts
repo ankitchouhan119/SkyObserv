@@ -3,7 +3,6 @@ import express from "express";
 import { createServer } from "http";
 import { api } from "@shared/routes";
 import path from "path";
-import fs from "fs";
 import { fileURLToPath } from "url";
 import { prisma } from "./db";
 import {
@@ -60,8 +59,7 @@ const httpServer = createServer(app);
 
 const PORT = parseInt(process.env.PORT || "5000", 10);
 const distPath = path.join(__dirname, "../dist/public");
-const hasProductionBuild = fs.existsSync(path.join(distPath, "index.html"));
-const useVite = !hasProductionBuild && process.env.NODE_ENV !== "production";
+const useVite = process.env.NODE_ENV !== "production";
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));

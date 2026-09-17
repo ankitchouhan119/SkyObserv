@@ -36,6 +36,8 @@ export const GET_TRACE_DETAILS = gql`
   query queryTrace($traceId: ID!) {
     queryTrace(traceId: $traceId) {
       spans {
+        traceId
+        segmentId
         spanId
         startTime
         endTime
@@ -44,6 +46,7 @@ export const GET_TRACE_DETAILS = gql`
         peer
         component
         layer
+        serviceCode
         isError
         tags {
           key

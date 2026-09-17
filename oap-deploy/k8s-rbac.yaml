@@ -1,0 +1,55 @@
+# RBAC for Apache SkyWalking OAP — Kubernetes monitoring (read-only).
+# Apply once per cluster before enabling K8s metrics on OAP.
+#
+#   kubectl create namespace skywalking --dry-run=client -o yaml | kubectl apply -f -
+#   kubectl apply -f k8s-rbac.yaml
+#
+# If OAP runs outside the cluster, use a kubeconfig for a user/service account
+# with the same permissions instead of this in-cluster ServiceAccount.
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: skywalking-oap
+  namespace: skywalking
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: skywalking-oap-k8s-monitor
+rules:
+  - apiGroups: [""]
+    resources:
+      - pods
+      - pods/log
+      - endpoints
+      - services
+      - nodes
+      - namespaces
+      - configmaps
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources:
+      - deployments
+      - replicasets
+      - statefulsets
+      - daemonsets
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["extensions"]
+    resources:
+      - deployments
+      - replicasets
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: skywalking-oap-k8s-monitor
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: skywalking-oap-k8s-monitor
+subjects:
+  - kind: ServiceAccount
+    name: skywalking-oap
+    namespace: skywalking

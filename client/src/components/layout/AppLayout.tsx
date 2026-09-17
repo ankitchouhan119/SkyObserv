@@ -5,12 +5,14 @@ import { Link, useLocation } from 'wouter';
 import { Activity, Layers, GitBranch, Database, Box, LogOut, BookOpen } from 'lucide-react';
 import { DurationSelector } from '@/components/common/DurationSelector';
 import { CustomRangePicker } from '../common/CustomRangePicker';
-import { MessageThreadCollapsible } from '../tambo/message-thread-collapsible';
+import { AskAiProvider, AskAiSidebarTrigger } from '../tambo/message-thread-collapsible';
+import { useApolloClient } from '@apollo/client';
 import { TamboThreadProvider, useTamboContextHelpers } from "@tambo-ai/react";
 import { TAMBO_SYSTEM_PROMPT } from '../tambo/prompt';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/common/ThemeToggle';
+import { useDurationStore } from '@/store/useDurationStore';
 import { cn } from '@/lib/utils';
 
 interface AppLayoutProps {
@@ -24,6 +26,21 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   const displayName = user?.fullName?.trim() || user?.email || "SkyObserv";
   const initials = displayName.slice(0, 2).toUpperCase();
+  const apolloClient = useApolloClient();
+  const autoRefreshMs = useDurationStore((state) => state.autoRefreshMs);
+  const refreshKey = useDurationStore((state) => state.refreshKey);
+  const refreshDuration = useDurationStore((state) => state.refresh);
+
+  React.useEffect(() => {
+    if (!refreshKey) return;
+    void apolloClient.refetchQueries({ include: 'active' });
+  }, [refreshKey, apolloClient]);
+
+  React.useEffect(() => {
+    if (!autoRefreshMs) return;
+    const id = window.setInterval(refreshDuration, autoRefreshMs);
+    return () => window.clearInterval(id);
+  }, [autoRefreshMs, refreshDuration]);
 
   // AI Navigation & Filter Sync Bridge
   React.useEffect(() => {
@@ -152,8 +169,9 @@ ${dynamicPrompt}`;
 
   return (
     <TamboThreadProvider contextKey="sky-observ-v5" systemPrompt={dynamicPrompt}>
-      <div className="min-h-screen bg-muted/40 text-foreground flex flex-col md:flex-row">
-        <aside className="w-full md:w-[var(--sidebar-width)] border-r border-border bg-card flex-shrink-0 flex flex-col h-screen sticky top-0 z-20">
+      <AskAiProvider contextKey="sky-observ-v5">
+      <div className="h-screen overflow-hidden bg-muted/40 text-foreground flex flex-col md:flex-row">
+        <aside className="w-full md:w-[var(--sidebar-width)] border-r border-border bg-card shrink-0 flex flex-col h-auto md:h-screen md:sticky md:top-0 z-20">
           <div className="p-4 border-b border-border">
             <Link href="/dashboard" className="flex items-center gap-3 cursor-pointer">
               <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center flex-shrink-0 shadow-sm">
@@ -193,15 +211,12 @@ ${dynamicPrompt}`;
           </nav>
 
           <div className="p-3 border-t border-border">
-            <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-muted/80 text-xs text-muted-foreground">
-              <span className="w-2 h-2 rounded-full bg-primary shrink-0" />
-              All systems operational
-            </div>
+            <AskAiSidebarTrigger />
           </div>
         </aside>
 
-        <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
-          <header className="h-[var(--header-height)] border-b border-border flex items-center justify-between px-5 bg-card sticky top-0 z-10 shadow-sm">
+        <main className="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
+          <header className="shrink-0 h-[var(--header-height)] border-b border-border flex items-center justify-between px-5 bg-card z-10 shadow-sm">
             <h1 className="text-base font-semibold text-foreground" style={{ fontFamily: 'Outfit, sans-serif' }}>
               {pageTitle}
             </h1>
@@ -232,12 +247,12 @@ ${dynamicPrompt}`;
             </div>
           </header>
 
-          <div className="flex-1 overflow-auto p-4 md:p-5">
+          <div className="flex-1 min-h-0 overflow-y-auto p-4 md:p-5">
             {children}
           </div>
         </main>
       </div>
-      <MessageThreadCollapsible />
+      </AskAiProvider>
     </TamboThreadProvider>
   );
 }

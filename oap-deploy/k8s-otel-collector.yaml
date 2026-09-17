@@ -1,0 +1,71 @@
+# Minimal OpenTelemetry Collector for SkyWalking K8s monitoring (production path).
+# Scrapes kube-state-metrics and forwards OTLP metrics to OAP.
+#
+# Prerequisites:
+#   1. kube-state-metrics installed in the cluster
+#   2. OAP started with SW_OTEL_RECEIVER=default and k8s OTel metric rules enabled
+#   3. OAP can reach the Kubernetes API (in-cluster ServiceAccount or kubeconfig)
+#
+#   kubectl apply -f k8s-rbac.yaml
+#   kubectl apply -f k8s-otel-collector.yaml
+#
+# Point OAP_HOST at your OAP gRPC/OTLP endpoint (in-cluster Service or external IP).
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-collector-k8s
+  namespace: skywalking
+data:
+  config.yaml: |
+    receivers:
+      prometheus:
+        config:
+          scrape_configs:
+            - job_name: kube-state-metrics
+              static_configs:
+                - targets: ["kube-state-metrics.kube-system.svc.cluster.local:8080"]
+    processors:
+      batch: {}
+    exporters:
+      otlp:
+        endpoint: ${OAP_HOST}:11800
+        tls:
+          insecure: true
+    service:
+      pipelines:
+        metrics:
+          receivers: [prometheus]
+          processors: [batch]
+          exporters: [otlp]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otel-collector-k8s
+  namespace: skywalking
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: otel-collector-k8s
+  template:
+    metadata:
+      labels:
+        app: otel-collector-k8s
+    spec:
+      serviceAccountName: skywalking-oap
+      containers:
+        - name: otel-collector
+          image: otel/opentelemetry-collector-contrib:0.96.0
+          args: ["--config=/etc/otel/config.yaml"]
+          env:
+            - name: OAP_HOST
+              value: "skywalking-oap.skywalking.svc.cluster.local"
+          volumeMounts:
+            - name: config
+              mountPath: /etc/otel
+      volumes:
+        - name: config
+          configMap:
+            name: otel-collector-k8s

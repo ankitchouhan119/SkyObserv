@@ -1,6 +1,15 @@
 import { useDurationStore } from '@/store/useDurationStore';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Clock, RefreshCw } from 'lucide-react';
 
 const ranges = [
@@ -12,8 +21,18 @@ const ranges = [
   { label: 'Last 24 Hours', minutes: 1440, step: 'HOUR' as const },
 ];
 
+const autoRefreshOptions = [
+  { label: 'Auto refresh off', ms: 0 },
+  { label: '1 second', ms: 1_000 },
+  { label: '5 seconds', ms: 5_000 },
+  { label: '30 seconds', ms: 30_000 },
+  { label: '1 minute', ms: 60_000 },
+  { label: '2 minutes', ms: 120_000 },
+  { label: '5 minutes', ms: 300_000 },
+];
+
 export function DurationSelector() {
-  const { label, setDuration, refresh } = useDurationStore();
+  const { label, setDuration, refresh, autoRefreshMs, setAutoRefresh } = useDurationStore();
 
   return (
     <div className="flex items-center gap-2">
@@ -32,7 +51,29 @@ export function DurationSelector() {
           ))}
         </DropdownMenuContent>
       </DropdownMenu>
-      <Button variant="ghost" size="icon" onClick={refresh}><RefreshCw className="h-4 w-4" /></Button>
+
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" title="Refresh">
+            <RefreshCw className={`h-4 w-4 ${autoRefreshMs > 0 ? 'text-primary' : ''}`} />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-48">
+          <DropdownMenuItem onClick={refresh}>Refresh now</DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuLabel>Auto refresh</DropdownMenuLabel>
+          <DropdownMenuRadioGroup
+            value={String(autoRefreshMs)}
+            onValueChange={(value) => setAutoRefresh(Number(value))}
+          >
+            {autoRefreshOptions.map((option) => (
+              <DropdownMenuRadioItem key={option.ms} value={String(option.ms)}>
+                {option.label}
+              </DropdownMenuRadioItem>
+            ))}
+          </DropdownMenuRadioGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }

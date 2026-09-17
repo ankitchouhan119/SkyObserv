@@ -40,6 +40,25 @@ export const GET_SERVICE_METRICS = gql`
         value
       }
     }
+    getServiceApdex: getLinearIntValues(
+      metric: { name: "service_apdex", id: $serviceId }
+      duration: $duration
+    ) {
+      values {
+        id
+        value
+      }
+    }
+    getServicePercentiles: getMultipleLinearIntValues(
+      metric: { name: "service_percentile", id: $serviceId }
+      numOfLinear: 5
+      duration: $duration
+    ) {
+      values {
+        id
+        value
+      }
+    }
   }
 `;
 

@@ -11,7 +11,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Box, ArrowLeft, Activity, Server, Search, LayoutGrid, Network, ArrowDownCircle, ArrowUpCircle, RefreshCw } from 'lucide-react';
+import { Box, ArrowLeft, Activity, Server, Search, LayoutGrid, Network, ArrowDownCircle, ArrowUpCircle, RefreshCw, BookOpen } from 'lucide-react';
+import { Link } from 'wouter';
+import { K8sSetupPanel } from '@/components/k8s/K8sSetupPanel';
 import { GET_K8S_DASHBOARD, GET_SERVICE_INSTANCES, GET_MQE_METRICS, GET_K8S_NODES } from '@/apollo/queries/kubernetes';
 import { useDurationStore } from '@/store/useDurationStore';
 import { cn } from '@/lib/utils';
@@ -279,6 +281,25 @@ export default function K8sNodeExplorerPage() {
               </SelectContent>
             </Select>
           </div>
+
+          {!loadingAll && filteredPods.length === 0 && (
+            <div className="space-y-4">
+              <div className="so-card p-8 text-center">
+                <Box className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
+                <p className="text-sm font-medium text-foreground">No pods in this view</p>
+                <p className="text-xs text-muted-foreground mt-1 max-w-md mx-auto">
+                  Try another namespace or node filter, or confirm OAP is receiving K8s metrics.
+                </p>
+                <Link href="/docs/kubernetes">
+                  <span className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline mt-4 cursor-pointer">
+                    <BookOpen className="w-4 h-4" />
+                    Kubernetes setup guide
+                  </span>
+                </Link>
+              </div>
+              <K8sSetupPanel compact showAdminNote={false} />
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {filteredPods.map((pod: any) => (

@@ -193,7 +193,10 @@
     @apply flex h-9 w-9 shrink-0 items-center justify-center rounded-lg;
   }
   .so-page {
-    @apply space-y-5 max-w-7xl mx-auto pb-8;
+    @apply space-y-5 w-full max-w-7xl mx-auto pb-8;
+  }
+  .so-page-fluid {
+    @apply space-y-5 w-full min-w-0 max-w-none mx-0 pb-4;
   }
   .so-page-header h2 {
     font-family: 'Outfit', system-ui, sans-serif;
@@ -204,6 +207,9 @@
   }
   .so-filter-bar {
     @apply so-card p-4 sticky top-0 z-10;
+  }
+  .so-page-toolbar {
+    @apply sticky top-0 z-10 space-y-4 pb-4 border-b border-border bg-muted/40 backdrop-blur-sm;
   }
   .so-table-wrap {
     @apply so-card overflow-hidden;
@@ -216,6 +222,41 @@
   }
   .so-status-bad {
     @apply text-destructive;
+  }
+
+  .so-insight-panel {
+    @apply so-card overflow-hidden shadow-md;
+  }
+  .so-insight-panel--danger {
+    @apply border-red-500/20 bg-gradient-to-br from-red-500/[0.04] via-card to-card;
+  }
+  .so-insight-panel--accent {
+    @apply border-sky-500/20 bg-gradient-to-br from-sky-500/[0.04] via-card to-card;
+  }
+
+  .so-kpi-gradient {
+    @apply rounded-xl border bg-gradient-to-br p-4 shadow-sm;
+  }
+  .so-kpi-violet {
+    @apply from-violet-500/15 to-purple-500/5 border-violet-500/20;
+  }
+  .so-kpi-danger {
+    @apply from-red-500/15 to-orange-500/5 border-red-500/20;
+  }
+  .so-kpi-emerald {
+    @apply from-emerald-500/15 to-teal-500/5 border-emerald-500/20;
+  }
+  .so-kpi-sky {
+    @apply from-sky-500/15 to-blue-500/5 border-sky-500/20;
+  }
+  .so-kpi-indigo {
+    @apply from-indigo-500/15 to-violet-500/5 border-indigo-500/20;
+  }
+  .so-kpi-primary {
+    @apply from-primary/15 to-primary/5 border-primary/20;
+  }
+  .so-kpi-cyan {
+    @apply from-cyan-500/15 to-sky-500/5 border-cyan-500/20;
   }
 
   /* Topology graph — canvas inherits grab cursor from library hover state */
